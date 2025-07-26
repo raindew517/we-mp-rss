@@ -177,10 +177,12 @@ async def get_mp_articles_source(
     offset: int = Query(0, ge=0),
     kw:str="",
     is_update:bool=True,
+    content_type:str=Query(None,alias="ctype"),
     template:str=None
     # current_user: dict = Depends(get_current_user)
 ):
     rss=RSS(name=f'{feed_id}_{limit}_{offset}',ext=ext)
+    rss.set_content_type(content_type)
     rss_xml = rss.get_cache()
     if rss_xml is not None and is_update==False:
          return Response(
@@ -276,9 +278,11 @@ async def rss(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     kw:str="",
+    content_type:str=Query(None,alias="ctype"),
     is_update:bool=True
 ):
-    return await get_mp_articles_source(request=request,feed_id=feed_id, limit=limit,offset=offset, is_update=is_update,ext=ext,kw=kw)
+    return await get_mp_articles_source(request=request,feed_id=feed_id, limit=limit,offset=offset, is_update=is_update,ext=ext,kw=kw,content_type=content_type)
+
 
 @feed_router.get("/search/{kw}/{feed_id}.{ext}", summary="获取公众号文章源")
 async def rss(
@@ -288,7 +292,8 @@ async def rss(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     kw:str="",
+    content_type:str=Query(None,alias="ctype"),
     is_update:bool=True
 ):
-    return await get_mp_articles_source(request=request,feed_id=feed_id, limit=limit,offset=offset, is_update=is_update,ext=ext,kw=kw)
+    return await get_mp_articles_source(request=request,feed_id=feed_id, limit=limit,offset=offset, is_update=is_update,ext=ext,kw=kw,content_type=content_type)
 

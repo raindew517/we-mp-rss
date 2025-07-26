@@ -196,11 +196,15 @@ class RSS:
             with open(self.rss_file, "w", encoding="utf-8") as f:
                 f.write(tree_str)
         return tree_str
+    def set_content_type(self,type:str=None):
+        self.content_type=type
     def get_content_type(self):
+        if self.content_type:
+            return self.content_type
         ext=self.ext
         if ext in("atom","xml","json","markdown"):
             return "html",
-        elif ext in("md"):
+        elif ext in("md","jmd"):
             return "markdown"
         elif ext in("txt"):
             return "text"
@@ -216,7 +220,7 @@ class RSS:
         Returns:
             JSON格式的字符串
         """
-
+        type=self.get_content_type()
         result = {
             "name":title,
             "link":link,
@@ -230,7 +234,7 @@ class RSS:
                     "description": item["description"],
                     "link": item["link"],
                     "updated": item["updated"].isoformat() if isinstance(item["updated"], datetime) else item["updated"],
-                    "content": item.get("content", ""),
+                    "content": format_content(item["content"],type),
                     "channel_name": item.get("mp_name", ""),
                     "feed": item.get("feed")
                 } for item in rss_list
@@ -268,7 +272,7 @@ class RSS:
             return self.generate_rss(rss_list, title=title, link=link, description=description,language=language,image_url=image_url)
         elif ext in ('atom','md','txt'):
             return self.generate_atom(rss_list, title=title, link=link, description=description,language=language,image_url=image_url)
-        elif ext == 'json':
+        elif ext in ('json','jmd'):
             return self.generate_json(rss_list, title=title, link=link, description=description,language=language,image_url=image_url)
         elif template is not None:
             return self.generate_by_template(rss_list,template, title=title, link=link, description=description,language=language,image_url=image_url)
