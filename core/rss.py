@@ -231,7 +231,8 @@ class RSS:
                     "link": item["link"],
                     "updated": item["updated"].isoformat() if isinstance(item["updated"], datetime) else item["updated"],
                     "content": item.get("content", ""),
-                    "channel_name": item.get("mp_name", "")
+                    "channel_name": item.get("mp_name", ""),
+                    "feed": item.get("feed")
                 } for item in rss_list
             ]
         }

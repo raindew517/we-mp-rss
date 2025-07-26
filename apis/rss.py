@@ -4,6 +4,7 @@ from fastapi.responses import Response
 from core.db import DB
 from core.rss import RSS
 from core.models.feed import Feed
+import json
 from .base import success_response, error_response
 from core.auth import get_current_user
 from core.config import cfg
@@ -228,7 +229,13 @@ async def get_mp_articles_source(
             "content": article.content or "",
             "image": article.pic_url or "",
             "mp_name":_feed.mp_name or "",
-            "updated": datetime.datetime.fromtimestamp(article.publish_time)
+            "updated": datetime.datetime.fromtimestamp(article.publish_time),
+            "feed": {
+                    "id":_feed.id,
+                    "name":_feed.mp_name,
+                    "cover":_feed.mp_cover,
+                    "intro":_feed.mp_intro
+            }
         } for _feed,article in articles]
         
 
