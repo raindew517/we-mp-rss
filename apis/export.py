@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body, UploadFile, File,Request
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from core.auth import get_current_user
@@ -146,5 +146,62 @@ async def import_mps(
             detail=error_response(
                 code=50001,
                 message="导入公众号列表失败"
+            )
+        )
+
+@router.get("/mps/opml", summary="导出公众号列表为OPML格式")
+async def export_mps_opml(
+    request: Request,
+    limit: int = Query(1000, ge=1, le=10000),
+    offset: int = Query(0, ge=0),
+    kw: str = Query(""),
+    current_user: dict = Depends(get_current_user)
+):
+    session = DB.get_session()
+    try:
+        from core.models.feed import Feed
+        query = session.query(Feed)
+        if kw:
+            query = query.filter(Feed.mp_name.ilike(f"%{kw}%"))
+        
+        mps = query.order_by(Feed.created_at.desc()).limit(limit).offset(offset).all()
+        rss_domain=cfg.get("rss.base_url",str(request.base_url))
+        if rss_domain=="":
+            rss_domain=str(request.base_url)
+        # 生成OPML内容
+        opml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+  <head>
+    <title>公众号订阅列表</title>
+    <dateCreated>{date}</dateCreated>
+  </head>
+  <body>
+{outlines}
+  </body>
+</opml>'''.format(
+            date=datetime.now().isoformat(),
+            outlines=''.join([f'<outline text="{mp.mp_name}" title="{mp.mp_name}" type="rss"  xmlUrl="{rss_domain}feed/{mp.id}.atom"/>\n' for mp in mps])
+        )
+        
+        # 创建临时OPML文件
+        temp_file = "temp_mp_export.opml"
+        with open(temp_file, "w", encoding='utf-8') as f:
+            f.write(opml_content)
+        
+        # 返回文件下载
+        return FileResponse(
+            temp_file,
+            media_type="application/xml",
+            filename="公众号订阅列表.opml",
+            background=BackgroundTask(lambda: os.remove(temp_file))
+        )
+        
+    except Exception as e:
+        print(f"导出OPML列表错误: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_response(
+                code=50002,
+                message="导出OPML列表失败"
             )
         )

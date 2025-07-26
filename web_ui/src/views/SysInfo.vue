@@ -1,5 +1,8 @@
 <template>
   <a-page-header title="系统信息" :sub-title="`版本: ${sysInfo.version}`">
+    <a-card :bordered="false" class="sys-info-card" title="系统资源">
+       <SystemResources :resources="sysInfo.resources" />
+    </a-card>
     <a-card :bordered="false" class="sys-info-card" title="文章统计">
       <a-descriptions bordered :column="{ xs: 1, sm: 1, md: 1, lg: 2 }">
          <a-descriptions-item label="公众号总数">
@@ -94,6 +97,7 @@
 import { ref, onMounted } from "vue";
 import { getSysInfo } from "@/api/sysInfo";
 import type { SysInfo } from "@/api/sysInfo";
+import SystemResources from "@/components/SystemResources.vue";
 
 const sysInfo = ref<SysInfo>({
   os: {

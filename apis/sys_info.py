@@ -1,6 +1,7 @@
 import platform
 import time
 import sys
+import psutil
 from fastapi import APIRouter,Depends
 from typing import Dict, Any
 from core.auth import get_current_user
@@ -32,6 +33,54 @@ async def get_base_info() -> Dict[str, Any]:
             code=50001,
             message=f"获取信息失败: {str(e)}"
         )    
+@router.get("/resources", summary="获取系统资源使用情况")
+async def get_system_resources(
+    current_user: dict = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """获取系统资源使用情况
+    
+    Returns:
+        BaseResponse格式的资源使用信息，包括:
+        - cpu: CPU使用率(%)
+        - memory: 内存使用情况
+        - disk: 磁盘使用情况
+    """
+    try:
+        # 获取CPU使用率
+        cpu_percent = psutil.cpu_percent(interval=1)
+        
+        # 获取内存使用情况
+        mem = psutil.virtual_memory()
+        
+        # 获取磁盘使用情况
+        disk = psutil.disk_usage('/')
+        
+        resources_info = {
+            'cpu': {
+                'percent': cpu_percent,
+                'cores': psutil.cpu_count(logical=False),
+                'threads': psutil.cpu_count(logical=True)
+            },
+            'memory': {
+                'total': round(mem.total / (1024 ** 3), 2),  # GB
+                'used': round(mem.used / (1024 ** 3), 2),
+                'free': round(mem.free / (1024 ** 3), 2),
+                'percent': mem.percent
+            },
+            'disk': {
+                'total': round(disk.total / (1024 ** 3), 2),  # GB
+                'used': round(disk.used / (1024 ** 3), 2),
+                'free': round(disk.free / (1024 ** 3), 2),
+                'percent': disk.percent
+            }
+        }
+        return success_response(data=resources_info)
+    except Exception as e:
+        return error_response(
+            code=50002,
+            message=f"获取系统资源失败: {str(e)}"
+        )
+
 @router.get("/info", summary="获取系统信息")
 async def get_system_info(
     current_user: dict = Depends(get_current_user)

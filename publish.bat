@@ -29,6 +29,7 @@ if %WEB_FLAG%==1 (
     cd web_ui
     call build.bat
     cd ../
+    exit /b 0
 )
 
 REM 读取Python配置文件中的版本号
