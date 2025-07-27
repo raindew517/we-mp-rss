@@ -33,6 +33,21 @@ async def get_base_info() -> Dict[str, Any]:
             code=50001,
             message=f"获取信息失败: {str(e)}"
         )    
+    
+
+ # 缓存不会频繁变动的系统信息
+_STATIC_INFO = {
+    'cpu': {
+        'cores': psutil.cpu_count(logical=False),
+        'threads': psutil.cpu_count(logical=True)
+    },
+    'memory': {
+        'total': round(psutil.virtual_memory().total / (1024 ** 3), 2)
+    },
+    'disk': {
+        'total': round(psutil.disk_usage('./').total / (1024 ** 3), 2)
+    }
+}
 @router.get("/resources", summary="获取系统资源使用情况")
 async def get_system_resources(
     current_user: dict = Depends(get_current_user)
@@ -45,32 +60,33 @@ async def get_system_resources(
         - memory: 内存使用情况
         - disk: 磁盘使用情况
     """
+   
+
     try:
-        # 获取CPU使用率
-        cpu_percent = psutil.cpu_percent(interval=1)
-        
-        # 获取内存使用情况
+        # 获取动态变化的资源信息
+        cpu_percent = psutil.cpu_percent(interval=0.1)
         mem = psutil.virtual_memory()
-        
-        # 获取磁盘使用情况
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage('./')
+        # 单位转换函数
+        def to_gb(bytes_value):
+            return round(bytes_value / (1024 ** 3), 2)
         
         resources_info = {
             'cpu': {
                 'percent': cpu_percent,
-                'cores': psutil.cpu_count(logical=False),
-                'threads': psutil.cpu_count(logical=True)
+                'cores': _STATIC_INFO['cpu']['cores'],
+                'threads': _STATIC_INFO['cpu']['threads']
             },
             'memory': {
-                'total': round(mem.total / (1024 ** 3), 2),  # GB
-                'used': round(mem.used / (1024 ** 3), 2),
-                'free': round(mem.free / (1024 ** 3), 2),
+                'total': _STATIC_INFO['memory']['total'],
+                'used': to_gb(mem.used),
+                'free': to_gb(mem.free),
                 'percent': mem.percent
             },
             'disk': {
-                'total': round(disk.total / (1024 ** 3), 2),  # GB
-                'used': round(disk.used / (1024 ** 3), 2),
-                'free': round(disk.free / (1024 ** 3), 2),
+                'total': _STATIC_INFO['disk']['total'],
+                'used': to_gb(disk.used),
+                'free': to_gb(disk.free),
                 'percent': disk.percent
             }
         }
