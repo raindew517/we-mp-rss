@@ -39,7 +39,11 @@ http.interceptors.response.use(
     }
     const data=response.data?.detail||response.data
     const errorMsg = data?.message || '请求失败'
-    Message.error(errorMsg)
+    if(response.headers['content-type']==='application/json') {
+      Message.error(errorMsg)
+    }else{
+      return response.data
+    }
     return Promise.reject(response.data)
   },
   error => {

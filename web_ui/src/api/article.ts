@@ -48,3 +48,12 @@ export const deleteArticle = (id: number) => {
 export const ClearArticle = (id: number) => {
   return http.delete<{code: number, message: string}>(`/wx/articles/clean`)
 }
+
+export const ExportOPML = () => {
+  return http.get<{code: number, data: string}>('/wx/export/mps/opml', {
+    params: {
+      limit: 1000,
+      offset: 0
+    }
+  })
+}

@@ -6,10 +6,17 @@
       <a-card :bordered="false" title="公众号" 
         :headStyle="{ padding: '12px 16px', borderBottom: '1px solid #eee', background: '#fff', zIndex: 1 ,border:0}">
         <template #extra>
-          <a-button type="primary" @click="showAddModal">
-            <template #icon><icon-plus /></template>
-            添加订阅
-          </a-button>
+           <a-dropdown>
+              <a-button type="primary">
+                <template #icon><icon-plus  /></template>
+                订阅
+                <icon-down />
+              </a-button>
+              <template #content>
+                <a-doption @click="showAddModal">添加公众号</a-doption>
+                <a-doption @click="exportOPML">导出OPML</a-doption>
+              </template>
+            </a-dropdown>
         </template>
         <div style="display: flex; flex-direction: column;; background: #fff">
             <a-list :data="mpList" :loading="mpLoading" bordered>
@@ -153,7 +160,7 @@ import { Avatar } from '@/utils/constants'
 import { ref, onMounted, h } from 'vue'
 import axios from 'axios'
 import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi } from '@arco-design/web-vue/es/icon'
-import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle } from '@/api/article'
+import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle, ExportOPML } from '@/api/article'
 import { getSubscriptions, UpdateMps} from '@/api/subscription'
 import { inject } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
@@ -330,6 +337,24 @@ const wechatAuthQrcodeRef = ref()
   const handleAuthClick = () => {
     showAuthQrcode()
   }
+
+const exportOPML = async () => {
+  try {
+    const response = await ExportOPML();
+    const blob = new Blob([response], { type: 'application/xml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rss_feed.opml';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('导出OPML失败:', error);
+    Message.error(error?.message || '导出OPML失败');
+  }
+};
 
 const openRssFeed = () => {
   const format = ['rss', 'atom', 'json','md','txt'].includes(rssFormat.value) 
