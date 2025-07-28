@@ -4,7 +4,7 @@ const formRef = ref()
 import { useRoute, useRouter } from 'vue-router'
 import { getMessageTask, createMessageTask, updateMessageTask } from '@/api/messageTask'
 import type { MessageTask, MessageTaskCreate } from '@/types/messageTask'
-import cronExpressionPicker from '@/components/cronExpressionPicker.vue'
+import cronExpressionPicker from '@/components/CronExpressionPicker.vue'
 import MpMultiSelect from '@/components/MpMultiSelect.vue'
 import { Message } from '@arco-design/web-vue'
 const route = useRoute()
