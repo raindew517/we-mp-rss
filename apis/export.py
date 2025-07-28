@@ -123,6 +123,10 @@ async def import_mps(
                     faker_id=faker_id,
                     created_at=datetime.now()
                 )
+                import base64
+                if mp.id == None:
+                    mp_id=base64.b64decode(faker_id).decode("utf-8")
+                    mp.id=f"MP_WXS_{mp_id}"
                 session.add(mp)
                 imported += 1
         

@@ -1,7 +1,6 @@
 <template>
     <div class="resource-charts">
       <!-- CPU 使用率 -->
-          
         <div class="chart-container">
           <a-tooltip :content="`CPU 核心数: ${resources.cpu?.cores || 0} 核 / ${resources.cpu?.threads || 0} 线程`">
           <custom-pie-chart :percent="resources.cpu?.percent || 0"  :title="`CPU`" :info="` ${resources.cpu?.cores || 0} 核 / ${resources.cpu?.threads || 0} 线程`"/>
@@ -93,17 +92,12 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
-  padding: 16px 0;
 }
 .chart-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-}
-.chart-label {
-  margin-top: 8px;
-  font-weight: 500;
 }
 
 :deep(.resource-tooltip) {

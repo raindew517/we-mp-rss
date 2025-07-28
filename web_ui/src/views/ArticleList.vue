@@ -13,8 +13,10 @@
                 <icon-down />
               </a-button>
               <template #content>
-                <a-doption @click="showAddModal">添加公众号</a-doption>
-                <a-doption @click="exportOPML">导出OPML</a-doption>
+                <a-doption @click="showAddModal"><template #icon><icon-plus /></template>添加公众号</a-doption>
+                <a-doption @click="exportMPS"><template #icon><icon-export /></template>导出公众号</a-doption>
+                <a-doption @click="importMPS"><template #icon><icon-import /></template>导入公众号</a-doption>
+                <a-doption @click="exportOPML"><template #icon><icon-share-external /></template>导出OPML</a-doption>
               </template>
             </a-dropdown>
         </template>
@@ -65,11 +67,11 @@
                 <icon-down />
               </a-button>
               <template #content>
-                <a-doption @click="rssFormat='atom'; openRssFeed()">ATOM</a-doption>
-                <a-doption @click="rssFormat='rss'; openRssFeed()">RSS</a-doption>
-                <a-doption @click="rssFormat='json'; openRssFeed()">JSON</a-doption>
-                <a-doption @click="rssFormat='md'; openRssFeed()">Markdown</a-doption>
-                <a-doption @click="rssFormat='txt'; openRssFeed()">Text</a-doption>
+                <a-doption @click="rssFormat='atom'; openRssFeed()"><template #icon><TextIcon text="atom" /></template>ATOM</a-doption>
+                <a-doption @click="rssFormat='rss'; openRssFeed()"><template #icon><TextIcon text="rss" /></template>RSS</a-doption>
+                <a-doption @click="rssFormat='json'; openRssFeed()"><template #icon><TextIcon text="json" /></template>JSON</a-doption>
+                <a-doption @click="rssFormat='md'; openRssFeed()"><template #icon><TextIcon text="md" /></template>Markdown</a-doption>
+                <a-doption @click="rssFormat='txt'; openRssFeed()"><template #icon><TextIcon text="txt" /></template>Text</a-doption>
               </template>
             </a-dropdown>
             <!-- <a-button @click="importArticles" tooltip="导入JSON格式文章数据">
@@ -159,15 +161,16 @@
 import { Avatar } from '@/utils/constants'
 import { ref, onMounted, h } from 'vue'
 import axios from 'axios'
-import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi } from '@arco-design/web-vue/es/icon'
-import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle, ExportOPML } from '@/api/article'
+import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode} from '@arco-design/web-vue/es/icon'
+import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle } from '@/api/article'
+import { ExportOPML,ExportMPS,ImportMPS } from '@/api/export'
 import { getSubscriptions, UpdateMps} from '@/api/subscription'
 import { inject } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { formatDateTime,formatTimestamp } from '@/utils/date'
 import router from '@/router'
 import {  deleteMpApi } from '@/api/subscription'
-
+import TextIcon from '@/components/TextIcon.vue'
 const articles = ref([])
 const loading = ref(false)
 const mpList = ref([])
@@ -353,6 +356,41 @@ const exportOPML = async () => {
   } catch (error) {
     console.error('导出OPML失败:', error);
     Message.error(error?.message || '导出OPML失败');
+  }
+};
+const exportMPS = async () => {
+  try {
+    const response = await ExportMPS();
+    const blob = new Blob([response], { type: 'application/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '公众号列表.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    Message.error(error?.message || '导出公众号失败');
+  }
+};
+
+const importMPS = async () => {
+  try {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await ImportMPS(formData);
+      Message.info(response?.message || "导入成功");
+    };
+    input.click();
+  } catch (error) {
+    Message.error(error?.message || '导入公众号失败');
   }
 };
 
