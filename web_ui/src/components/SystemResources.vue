@@ -3,20 +3,23 @@
       <!-- CPU 使用率 -->
           
         <div class="chart-container">
-          <custom-pie-chart :percent="resources.cpu?.percent || 0" :size="80" :title="`CPU 核心数: ${resources.cpu?.cores || 0} 核 / ${resources.cpu?.threads || 0} 线程`"/>
-          <div class="chart-label">CPU 使用率</div>
+          <a-tooltip :content="`CPU 核心数: ${resources.cpu?.cores || 0} 核 / ${resources.cpu?.threads || 0} 线程`">
+          <custom-pie-chart :percent="resources.cpu?.percent || 0"  :title="`CPU`" :info="` ${resources.cpu?.cores || 0} 核 / ${resources.cpu?.threads || 0} 线程`"/>
+          </a-tooltip>
         </div>
 
       <!-- 内存使用率 -->
          
         <div class="chart-container">
-          <custom-pie-chart :percent="resources.memory?.percent || 0" :size="80" :title="`内存总量: ${resources.memory?.total || 0} GB (已用: ${resources.memory?.used || 0} GB, 空闲: ${resources.memory?.free || 0} GB)`"/>
-          <div class="chart-label">内存使用率</div>
+          <a-tooltip placement="top" :content="`内存总量: ${resources.memory?.total || 0} GB (已用: ${resources.memory?.used || 0} GB, 空闲: ${resources.memory?.free || 0} GB)`">
+          <custom-pie-chart :percent="resources.memory?.percent || 0"  :title="`内存`" :info="` ${resources.memory?.used || 0}GB/${resources.memory?.total || 0}GB`"/>
+          </a-tooltip>
         </div>
       <!-- 磁盘使用率 -->
         <div class="chart-container">
-          <custom-pie-chart :percent="resources.disk?.percent || 0" :size="80" :title="`磁盘总量: ${resources.disk?.total || 0} GB (已用: ${resources.disk?.used || 0} GB, 空闲: ${resources.disk?.free || 0} GB)`"/>
-          <div class="chart-label">磁盘使用率</div>
+          <a-tooltip placement="top" :content="`磁盘总量: ${resources.disk?.total || 0} GB (已用: ${resources.disk?.used || 0} GB, 空闲: ${resources.disk?.free || 0} GB)`">
+          <custom-pie-chart :percent="resources.disk?.percent || 0" :title="`磁盘`" :info="` ${resources.disk?.used || 0}GB/${resources.disk?.total || 0} GB `"/>
+          </a-tooltip>
         </div>
     </div>
 </template>
@@ -47,7 +50,7 @@ export default {
     this.fetchResources();
     this.intervalId = setInterval(() => {
       this.fetchResources();
-    }, 1000);
+    }, 2000);
     
     // 监听路由变化
     this.unwatchRoute = this.$router.afterEach(() => {

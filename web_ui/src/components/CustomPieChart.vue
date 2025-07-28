@@ -7,7 +7,7 @@
         r="40"
         fill="none"
         stroke="#f0f0f0"
-        stroke-width="8"
+        stroke-width="3"
       />
       <circle
         cx="50"
@@ -15,13 +15,19 @@
         r="40"
         fill="none"
         :stroke="getStrokeColor"
-        stroke-width="8"
+        stroke-width="4"
         :stroke-dasharray="dashArray"
         stroke-linecap="round"
         transform="rotate(-90 50 50)"
       />
-      <text x="50" y="50" text-anchor="middle" dominant-baseline="middle">
+      <text x="50" y="30" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#333">
+        {{ title }}
+      </text>
+      <text x="50" y="50" text-anchor="middle" dominant-baseline="middle" font-size="18" fill="#1890ff" font-weight="bold">
         {{ percent }}%
+      </text>
+      <text x="50" y="70" text-anchor="middle" dominant-baseline="middle" font-size="6" fill="#666">
+        {{ info }}
       </text>
     </svg>
   </div>
@@ -36,7 +42,15 @@ export default {
     },
     size: {
       type: Number,
-      default: 80
+      default: 150
+    },
+    title: {
+      type: String,
+      default: ""
+    },
+    info: {
+      type: String,
+      default: ""
     }
   },
   computed: {
