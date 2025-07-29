@@ -62,8 +62,12 @@ class DatabaseUpgrader:
     
     def upgrade_database(self):
         """执行数据库升级到最新版本"""
-        command.upgrade(self.alembic_cfg, "head")
-        print("数据库表结构升级完成")
+        try:
+            command.upgrade(self.alembic_cfg, "head")
+            print("数据库表结构升级完成")
+        finally:
+            if hasattr(self, '_temp_config_path') and os.path.exists(self._temp_config_path):
+                os.unlink(self._temp_config_path)
     
     def generate_migration(self, message=None):
         """

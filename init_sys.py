@@ -28,7 +28,8 @@ def sync_models():
          from data_sync import DatabaseSynchronizer
          DB.create_tables()
          time.sleep(3)
-         DatabaseSynchronizer(db_url=cfg.get("db","")).sync()
+         synchronizer = DatabaseSynchronizer(db_url=cfg.get("db",""))
+         synchronizer.sync()
          print_info("模型同步完成")
 
      

@@ -98,6 +98,10 @@ class DatabaseSynchronizer:
             return True
         except SQLAlchemyError as e:
             self.logger.error(f"数据库同步失败: {e}")
+            return False
+        finally:
+            if self.engine:
+                self.engine.dispose()
             # raise
 
 def main():

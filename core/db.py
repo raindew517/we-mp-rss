@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Engine,Text
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base,scoped_session
 from sqlalchemy import Column, Integer, String, DateTime
 from typing import Optional, List
 from .models import Feed, Article
@@ -37,7 +37,7 @@ class Db:
                     open(db_path, 'w').close()
                     
             self.engine = create_engine(con_str,pool_size=10, max_overflow=300, pool_recycle=3600, pool_pre_ping=True, echo=False)
-            Session = sessionmaker(bind=self.engine,expire_on_commit=True)
+            Session = scoped_session(sessionmaker(bind=self.engine,expire_on_commit=True))
             self._session = Session()
         except Exception as e:
             print(f"Error creating database connection: {e}")
@@ -131,7 +131,7 @@ class Db:
     def get_session(self):
         """获取新的数据库会话"""
         if self._session_factory is None:
-            self._session_factory = sessionmaker(bind=self.engine, expire_on_commit=False)
+            self._session_factory = scoped_session(sessionmaker(bind=self.engine, expire_on_commit=True))
         return self._session_factory()
         
     def session_dependency(self):
