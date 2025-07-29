@@ -97,6 +97,7 @@ async def import_mps(
         skipped = 0
         
         for row in csv_reader:
+            mp_id = row["id"]
             mp_name = row["公众号名称"]
             mp_cover = row["封面图"]
             mp_intro = row.get("简介", "")
@@ -104,7 +105,7 @@ async def import_mps(
             faker_id = row.get("faker_id", "")
             
             # 检查是否已存在
-            existing = session.query(Feed).filter(Feed.mp_name == mp_name).first()
+            existing = session.query(Feed).filter(Feed.faker_id == faker_id).first()
             
             if existing:
                 # 更新现有记录
@@ -116,6 +117,7 @@ async def import_mps(
             else:
                 # 创建新记录
                 mp = Feed(
+                    id=mp_id,
                     mp_name=mp_name,
                     mp_cover=mp_cover,
                     mp_intro=mp_intro,
@@ -125,8 +127,8 @@ async def import_mps(
                 )
                 import base64
                 if mp.id == None:
-                    mp_id=base64.b64decode(faker_id).decode("utf-8")
-                    mp.id=f"MP_WXS_{mp_id}"
+                    _mp_id=base64.b64decode(faker_id).decode("utf-8")
+                    mp.id=f"MP_WXS_{_mp_id}"
                 session.add(mp)
                 imported += 1
         

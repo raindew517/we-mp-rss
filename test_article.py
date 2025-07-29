@@ -7,14 +7,17 @@ def testWeb():
     try:
         # fetch_articles_without_content()
         urls=[
-            "https://mp.weixin.qq.com/s/irJfYFP4TBVb4rD8jFxBoA",
-            "https://mp.weixin.qq.com/s/SJNb4YfqhlArFdCWhtKmXg",
-            "https://mp.weixin.qq.com/s/_7owCGjJ1mVaYH9NMPX1TQ",
-            "https://mp.weixin.qq.com/s/zmhHRTV2S2ZCr2fYPIg5wA",
+            "https://mp.weixin.qq.com/s/roc7CmIjuEyqlMgUYRF9dw",
+            "https://mp.weixin.qq.com/s/yNL6jIHjvbNCH5VRgWpf-w",
+            # "https://mp.weixin.qq.com/s/irJfYFP4TBVb4rD8jFxBoA",
+            # "https://mp.weixin.qq.com/s/SJNb4YfqhlArFdCWhtKmXg",
+            # "https://mp.weixin.qq.com/s/_7owCGjJ1mVaYH9NMPX1TQ",
+            # "https://mp.weixin.qq.com/s/zmhHRTV2S2ZCr2fYPIg5wA",
         ]
         for url in urls:
             Web.Close()
             article_data = Web.get_article_content(url)
+            del article_data['content']
             print(article_data)
         Web.Close()
         

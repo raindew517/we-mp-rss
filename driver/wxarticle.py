@@ -103,12 +103,12 @@ class WXArticleFetcher:
             wait.until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "#activity-detail"))
             )
-            print(body)
+            # print(body)
              # 等待页面加载完成，并查找 meta[property="og:title"]
             og_title = wait.until(EC.presence_of_element_located((By.XPATH, '//meta[@property="og:title"]')))
             
             # 获取属性值
-            print(og_title.get_attribute("content"))
+            # print(og_title.get_attribute("content"))
             # 获取文章元数据
             title = og_title.get_attribute("content")
 

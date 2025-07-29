@@ -68,6 +68,8 @@ class Db:
             session=self.get_session()
             from datetime import datetime
             art = Article(**article_data)
+            if art.id:
+               art.id=f"{str(art.mp_id).replace("MPS_WXS_","")}-{art.id}"
             if art.created_at is None:
                 art.created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             if art.updated_at is None:

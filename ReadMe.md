@@ -307,7 +307,10 @@ npm run build
 - [Gitee：](https://gitee.com/rachel_os/we-mp-rss)https://gitee.com/rachel_os/we-mp-rss
 
 # 分享交流群
-QQ:244538330
+WeRss QQ交流群
+群一:244538330
+群二:866248326
+群三:708461849
 
 #  优质推荐
 [橙单-高质量低代码平台](https://gitee.com/orangeform/orange-admin)

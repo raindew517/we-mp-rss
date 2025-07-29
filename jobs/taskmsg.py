@@ -3,7 +3,8 @@ from core.config import cfg
 from core.models import MessageTask
 DB = Db()
 DB.init(cfg.get("db"))
-def get_message_task() -> list[MessageTask]:
+def get_message_task(job_id:str=None) -> list[MessageTask]:
+
     """
     获取单个消息任务详情
     
@@ -15,7 +16,10 @@ def get_message_task() -> list[MessageTask]:
     """
     try:
         session=DB.get_session()
-        message_task = session.query(MessageTask).filter(MessageTask.status==1).all()
+        query=session.query(MessageTask).filter(MessageTask.status==1)
+        if job_id:
+            query=query.filter(MessageTask.id==job_id)
+        message_task = query.all()
         if not message_task:
             return None
         return message_task

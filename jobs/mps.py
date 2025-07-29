@@ -78,13 +78,13 @@ def reload_job():
     TaskQueue.clear_queue()
     start_job()
 
-def start_job():
+def start_job(job_id:str=None):
     #开启自动同步未同步 文章任务
     from jobs.fetch_no_article import start_sync_content
     start_sync_content()
     
     from .taskmsg import get_message_task
-    tasks=get_message_task()
+    tasks=get_message_task(job_id)
     if not tasks:
         print("没有任务")
         return

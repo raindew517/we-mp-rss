@@ -21,6 +21,7 @@ def UpdateArticle(art:dict):
     if DEBUG:
         delete_article(art['id'])
         pass
+   
     if  DB.add_article(art):
         mps_count=mps_count+1
         return True

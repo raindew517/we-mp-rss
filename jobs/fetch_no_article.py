@@ -50,7 +50,9 @@ def fetch_articles_without_content():
     finally:
         Web.Close()
 from core.task import TaskScheduler
+from core.queue import TaskQueueManager
 scheduler=TaskScheduler()
+task_queue=TaskQueueManager()
 from core.config import cfg
 from core.print import print_success,print_warning
 def start_sync_content():
@@ -59,7 +61,11 @@ def start_sync_content():
         return
     interval=int(cfg.get("gather.content_auto_interval",1)) # 每隔多少分钟
     cron_exp=f"*/{interval} * * * *"
-    job_id=scheduler.add_cron_job(fetch_articles_without_content,cron_expr=cron_exp)
+    scheduler.clear_all_jobs()
+    task_queue.clear_queue()
+    def do_sync():
+        task_queue.add_task(fetch_articles_without_content)
+    job_id=scheduler.add_cron_job(do_sync,cron_expr=cron_exp)
     print_success(f"已添自动同步文章内容任务: {job_id}")
     scheduler.start()
 if __name__ == "__main__":

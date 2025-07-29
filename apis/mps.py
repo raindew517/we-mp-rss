@@ -102,8 +102,11 @@ async def update_mps(
                     message="请选择一个公众号"
                 )
         import time
-        time_span=int(time.time())-mp.update_time
-        if time_span<cfg.get("sync_interval",60):
+        sync_interval=cfg.get("sync_interval",60)
+        if mp.update_time is None:
+            mp.update_time=int(time.time())-sync_interval
+        time_span=int(time.time())-int(mp.update_time)
+        if time_span<sync_interval:
            return error_response(
                     code=40402,
                     message="请不要频繁更新操作",
