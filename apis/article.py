@@ -73,7 +73,7 @@ async def get_articles(
         
         # 获取总数
         total = query.count()
-        query= query.order_by(Article.publish_time.desc(),Article.id.desc()).offset(offset).limit(limit)
+        query= query.order_by(Article.publish_time.desc()).offset(offset).limit(limit)
         # query= query.order_by(Article.id.desc()).offset(offset).limit(limit)
         # 分页查询（按发布时间降序）
         articles = query.all()
