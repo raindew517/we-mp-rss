@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status as fast_status, Query
 from core.auth import get_current_user
 from core.db import DB
 from core.models.base import DATA_STATUS
@@ -36,7 +36,7 @@ async def clean_orphan_articles(
         session.rollback()
         print(f"清理无效文章错误: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_201_CREATED,
+            status_code=fast_status.HTTP_201_CREATED,
             detail=error_response(
                 code=50001,
                 message="清理无效文章失败"
@@ -105,7 +105,7 @@ async def get_articles(
         raise e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
             detail=error_response(
                 code=50001,
                 message=f"获取文章列表失败: {str(e)}"
@@ -124,7 +124,7 @@ async def get_article_detail(
         if not article:
             from .base import error_response
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=fast_status.HTTP_404_NOT_FOUND,
                 detail=error_response(
                     code=40401,
                     message="文章不存在"
@@ -135,7 +135,7 @@ async def get_article_detail(
         raise e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
             detail=error_response(
                 code=50001,
                 message=f"获取文章详情失败: {str(e)}"
@@ -155,7 +155,7 @@ async def delete_article(
         article = session.query(Article).filter(Article.id == article_id).first()
         if not article:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=fast_status.HTTP_404_NOT_FOUND,
                 detail=error_response(
                     code=40401,
                     message="文章不存在"
@@ -171,7 +171,7 @@ async def delete_article(
     except Exception as e:
         session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
             detail=error_response(
                 code=50001,
                 message=f"删除文章失败: {str(e)}"
