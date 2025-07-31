@@ -219,7 +219,7 @@ const columns = [
   {
     title: '文章标题',
     dataIndex: 'title',
-    width: '60%',
+    width: window.innerWidth -1000,
     ellipsis: true,
     render: ({ record }) => h('a', {
       href: record.url || '#',
@@ -231,7 +231,7 @@ const columns = [
   {
     title: '公众号',
     dataIndex: 'mp_id',
-    width: '8%',
+    width: '120',
     ellipsis: true,
     render: ({ record }) => {
       const mp = mpList.value.find(item => item.id === record.mp_id);
@@ -243,7 +243,7 @@ const columns = [
   {
     title: '更新时间',
     dataIndex: 'created_at',
-    width: '8%',
+    width: '130',
     render: ({ record }) => h('span',
       { style: { color: 'var(--color-text-3)', fontSize: '12px' } },
       formatDateTime(record.created_at)
@@ -252,18 +252,10 @@ const columns = [
   {
     title: '发布时间',
     dataIndex: 'publish_time',
-    width: '8%',
+    width: '130',
     render: ({ record }) => h('span',
       { style: { color: 'var(--color-text-3)', fontSize: '12px' } },
       formatTimestamp(record.publish_time)
-    )
-  },
-  {
-    title: '正文',
-    width: '8%',
-    render: ({ record }) => h('span', 
-      { style: { color: 'var(--color-text-3)', fontSize: '12px' } },
-      record.content && record.content.trim() ? '是' : '否'
     )
   },
   {

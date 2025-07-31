@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status as fast_status, Qu
 from core.auth import get_current_user
 from core.db import DB
 from core.models.base import DATA_STATUS
-from core.models.article import Article
+from core.models.article import Article,ArticleBase
 from sqlalchemy import and_, or_, desc
 from .base import success_response, error_response
 from core.config import cfg
@@ -80,7 +80,7 @@ async def get_articles(
       
         
         # 构建查询条件
-        query = session.query(Article)
+        query = session.query(ArticleBase)
         
         if status:
             query = query.filter(Article.status == status)

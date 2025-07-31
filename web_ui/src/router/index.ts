@@ -10,6 +10,7 @@ import ConfigList from '../views/ConfigList.vue'
 import ConfigDetail from '../views/ConfigDetail.vue'
 import MessageTaskList from '../views/MessageTaskList.vue'
 import MessageTaskForm from '../views/MessageTaskForm.vue'
+import NovelReader from '../views/NovelReader.vue'
 
 const routes = [
   {
@@ -49,6 +50,7 @@ const routes = [
           permissions: ['wechat:manage'] 
         }
       },
+      
       {
         path: 'configs',
         name: 'ConfigList',
@@ -139,7 +141,13 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login
-  }
+  },
+  {
+        path: '/reader',
+        name: 'NovelReader',
+        component: NovelReader,
+        meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({
