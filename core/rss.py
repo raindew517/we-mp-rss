@@ -155,6 +155,8 @@ class RSS:
         
         # 创建根元素(Atom标准)
         feed = ET.Element("feed", xmlns="http://www.w3.org/2005/Atom")
+        if full_context==True:
+            feed.attrib["xmlns:content"] = "http://purl.org/rss/1.0/modules/content/"
         ET.SubElement(feed, "title").text = title
         ET.SubElement(feed, "link",rel="alternate", href=link)
         ET.SubElement(feed, "link",rel="icon", href=image_url)
@@ -186,8 +188,17 @@ class RSS:
             
             if full_context:
                 type=self.get_content_type()
-                content = ET.SubElement(entry, "content", type="html") 
-                content.text = format_content(rss_item["content"],type)
+                # content = ET.SubElement(entry, "content", type=f"{str(type)}") 
+                # content.text = format_content(rss_item["content"],type)
+                try:
+                    if cfg.get("rss.cdata",False)==True:
+                        content = f"<![CDATA[{str(rss_item['content'])}]]>"  # 使用CDATA包裹内容
+                    else:
+                        content = str(rss_item['content'])
+                    ET.SubElement(entry, "content:encoded").text = content
+                except Exception as e:
+                    print(f"Error adding content:encoded element: {e}")
+                pass
         # 生成XML字符串
         tree_str = '<?xml version="1.0" encoding="utf-8"?>\r\n' + \
                   ET.tostring(feed, encoding="utf-8", method="xml").decode("utf-8")
@@ -198,9 +209,7 @@ class RSS:
         return tree_str
     def set_content_type(self,type:str=None):
         self.content_type=type
-    def get_content_type(self):
-        if self.content_type:
-            return self.content_type
+    def get_content_type(self)->str:
         ext=self.ext
         if ext in("atom","xml","json","markdown"):
             return "html",
