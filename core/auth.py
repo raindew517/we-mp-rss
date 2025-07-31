@@ -11,6 +11,8 @@ from core.config import  cfg,API_BASE
 from sqlalchemy.orm import Session
 from core.models import User
 from passlib.context import CryptContext
+import json
+
 
 SECRET_KEY = cfg.get("secret","csol2025")  # 生产环境应使用更安全的密钥
 ALGORITHM = "HS256"
@@ -52,7 +54,7 @@ def get_login_attempts(username: str) -> int:
     """获取用户登录失败次数"""
     return _login_attempts.get(username, 0)
 
-def get_user(username: str) -> Optional[DBUser]:
+def get_user(username: str) -> Optional[dict]:
     """从数据库获取用户，带缓存功能"""
     # 先检查缓存
     if username in _user_cache:
@@ -62,9 +64,14 @@ def get_user(username: str) -> Optional[DBUser]:
     try:
         user = session.query(DBUser).filter(DBUser.username == username).first()
         if user:
-            # 存入缓存
-            _user_cache[username] = user
-        return user
+            # 转换为字典并存入缓存
+            user_dict = user.__dict__.copy()
+            # 移除 SQLAlchemy 内部属性（如 _sa_instance_state）
+            user_dict.pop('_sa_instance_state', None)
+            user_dict=User(**user_dict)
+            _user_cache[username] = user_dict
+            return user_dict
+        return None
     except Exception as e:
         print(f"获取用户错误: {str(e)}")
         return None
@@ -88,6 +95,7 @@ def authenticate_user(username: str, password: str) -> Optional[DBUser]:
         )
     
     user = get_user(username)
+
     if not user or not pwd_context.verify(password, user.password_hash):
         # 增加失败次数
         _login_attempts[username] = _login_attempts.get(username, 0) + 1

@@ -11,6 +11,7 @@ from core.print import print_warning, print_info, print_error, print_success
 router = APIRouter(prefix=f"/articles", tags=["文章管理"])
 
 
+    
 @router.delete("/clean", summary="清理无效文章(MP_ID不存在于Feeds表中的文章)")
 async def clean_orphan_articles(
     current_user: dict = Depends(get_current_user)
@@ -40,6 +41,27 @@ async def clean_orphan_articles(
             detail=error_response(
                 code=50001,
                 message="清理无效文章失败"
+            )
+        )
+    
+@router.delete("/clean_duplicate_articles", summary="清理重复文章")
+async def clean_duplicate(
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        from tools.clean import clean_duplicate_articles
+        (msg, deleted_count) =clean_duplicate_articles()
+        return success_response({
+            "message": msg,
+            "deleted_count": deleted_count
+        })
+    except Exception as e:
+        print(f"清理重复文章: {str(e)}")
+        raise HTTPException(
+            status_code=fast_status.HTTP_201_CREATED,
+            detail=error_response(
+                code=50001,
+                message="清理重复文章"
             )
         )
 

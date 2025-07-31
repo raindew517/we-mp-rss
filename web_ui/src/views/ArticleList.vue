@@ -56,6 +56,10 @@
               <template #icon><icon-delete /></template>
               清理无效文章
             </a-button>
+            <a-button @click="clear_duplicate_article" v-if="activeFeed?.id==''">
+              <template #icon><icon-delete /></template>
+              清理重复文章
+            </a-button>
             <a-button @click="handleAuthClick">
               <template #icon><icon-scan /></template>
               刷新授权
@@ -162,7 +166,7 @@ import { Avatar } from '@/utils/constants'
 import { ref, onMounted, h } from 'vue'
 import axios from 'axios'
 import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode} from '@arco-design/web-vue/es/icon'
-import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle } from '@/api/article'
+import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle,ClearDuplicateArticle } from '@/api/article'
 import { ExportOPML,ExportMPS,ImportMPS } from '@/api/export'
 import { getSubscriptions, UpdateMps} from '@/api/subscription'
 import { inject } from 'vue'
@@ -444,6 +448,16 @@ const handleRefresh = () => {
 const clear_articles = () => {
   fullLoading.value = true
   ClearArticle().then((res) => {
+    Message.success(res?.message||'清理成功')
+    refreshModalVisible.value = false
+  }).finally(() => {
+    fullLoading.value = false
+  })
+  fetchArticles()
+}
+const clear_duplicate_article = () => {
+  fullLoading.value = true
+  ClearDuplicateArticle().then((res) => {
     Message.success(res?.message||'清理成功')
     refreshModalVisible.value = false
   }).finally(() => {

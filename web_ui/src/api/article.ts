@@ -48,4 +48,7 @@ export const deleteArticle = (id: number) => {
 export const ClearArticle = (id: number) => {
   return http.delete<{code: number, message: string}>(`/wx/articles/clean`)
 }
+export const ClearDuplicateArticle = (id: number) => {
+  return http.delete<{code: number, message: string}>(`/wx/articles/clean_duplicate_articles`)
+}
 

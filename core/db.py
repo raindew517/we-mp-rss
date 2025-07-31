@@ -37,8 +37,6 @@ class Db:
                     open(db_path, 'w').close()
                     
             self.engine = create_engine(con_str,pool_size=10, max_overflow=300, pool_recycle=3600, pool_pre_ping=True, echo=False)
-            # Session = scoped_session(sessionmaker(bind=self.engine,expire_on_commit=True))
-            # self._session = Session()
         except Exception as e:
             print(f"Error creating database connection: {e}")
             raise
@@ -132,13 +130,11 @@ class Db:
         """获取新的数据库会话"""
         if self._session_factory is None:
             self._session_factory = scoped_session(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
-        
         session = self._session_factory()
-        
         # 检查会话是否已经关闭
         if not session.is_active:
             print("Session is already closed.")
-            return scoped_session(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
+            return self._session_factory()
         return session
         
     def session_dependency(self):
