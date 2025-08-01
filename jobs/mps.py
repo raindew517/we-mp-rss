@@ -11,7 +11,6 @@ from core.print import print_info,print_success,print_error
 from driver.wx import WX_API
 from driver.success import Success
 wx_db=db.Db()
-wx_db.init(cfg.get("db"))
 def fetch_all_article():
     print("开始更新")
     wx=WxGather().Model()

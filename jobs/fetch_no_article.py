@@ -1,10 +1,11 @@
 from core.models.article import Article,DATA_STATUS
-from core.db import DB
+import core.db as db
 from core.wx.base import WxGather
 from time import sleep
 from core.print import print_success,print_error
 import random
 from driver.wxarticle import Web
+DB=db.DB()
 def fetch_articles_without_content():
     """
     查询content为空的文章，调用微信内容提取方法获取内容并更新数据库

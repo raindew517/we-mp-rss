@@ -1,9 +1,10 @@
 
 import core.wx as wx 
 import core.db as db
-from core.db import DB
 from core.config import DEBUG,cfg
 from core.models.article import Article
+DB=db.Db()
+
 def delete_article(id:str):
     try:
         session=DB.get_session()

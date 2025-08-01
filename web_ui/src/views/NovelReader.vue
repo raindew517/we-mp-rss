@@ -1,90 +1,104 @@
 <template>
   <div class="novel-reader">
-    <div class="header">
-      <h1>{{ novelTitle }}</h1>
-      <button @click="toggleSettings">设置</button>
+    <!-- 顶部搜索栏 -->
+    <div class="search-bar">
+      <input type="text" placeholder="搜索小说" />
+      <button>搜索</button>
     </div>
 
-    <div class="book-container">
-      <div 
-        class="page" 
-        :class="{ 'page-flipped': isFlipped }"
-        @click="flipPage"
-      >
-        <div class="page-front" :style="contentStyle">
-          {{ currentPageContent }}
+    <!-- 公告 -->
+    <div class="announcement">
+      <p>最新公告：欢迎使用小说阅读器！</p>
+    </div>
+
+    <!-- 分类导航 -->
+    <div class="category-nav">
+      <div class="category-item" v-for="category in categories" :key="category.id">
+        {{ category.name }}
+      </div>
+    </div>
+
+    <!-- 小说列表 -->
+    <div class="novel-list">
+      <div class="novel-item" v-for="novel in novels" :key="novel.id">
+        <h3>{{ novel.title }}</h3>
+        <p>{{ novel.description }}</p>
+      </div>
+    </div>
+
+    <!-- 阅读页面 -->
+    <div class="reading-page" v-if="isReading">
+      <div class="content" @click="toggleMenu">
+        {{ currentContent }}
+      </div>
+
+      <!-- 左侧滑出目录 -->
+      <div class="drawer" :class="{ 'open': isDrawerOpen }">
+        <div class="drawer-content">
+          <h3>目录</h3>
+          <ul>
+            <li v-for="chapter in chapters" :key="chapter.id">
+              {{ chapter.title }}
+            </li>
+          </ul>
         </div>
-        <div class="page-back" :style="contentStyle">
-          {{ nextPageContent }}
-        </div>
+      </div>
+
+      <!-- 菜单和设置 -->
+      <div class="menu" v-if="isMenuOpen">
+        <button @click="prevPage">上一页</button>
+        <button @click="nextPage">下一页</button>
+        <button @click="toggleDrawer">目录</button>
       </div>
     </div>
 
-    <div class="footer">
-      <button @click="prevChapter">上一章</button>
-      <button @click="nextChapter">下一章</button>
-    </div>
-
-    <div v-if="showSettings" class="settings-modal">
-      <h2>阅读设置</h2>
-      <div>
-        <label>字体大小：</label>
-        <input type="range" v-model="fontSize" min="12" max="24" />
-      </div>
-      <div>
-        <label>背景颜色：</label>
-        <input type="color" v-model="backgroundColor" />
-      </div>
-      <button @click="closeSettings">关闭</button>
+    <!-- 出错界面 -->
+    <div class="error-page" v-if="hasError">
+      <p>网络错误，请重试！</p>
+      <button @click="retry">重试</button>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'NovelReader',
   data() {
     return {
-      novelTitle: '小说标题',
-      currentChapterContent: '这里是小说内容...',
-      currentPageContent: '这里是当前页内容...',
-      nextPageContent: '这里是下一页内容...',
-      isFlipped: false,
-      showSettings: false,
-      fontSize: 16,
-      backgroundColor: '#ffffff',
+      categories: [
+        { id: 1, name: '玄幻' },
+        { id: 2, name: '都市' },
+        { id: 3, name: '科幻' },
+      ],
+      novels: [
+        { id: 1, title: '小说1', description: '这是一本小说' },
+        { id: 2, title: '小说2', description: '这是另一本小说' },
+      ],
+      chapters: [
+        { id: 1, title: '第一章' },
+        { id: 2, title: '第二章' },
+      ],
+      currentContent: '这里是小说正文内容...',
+      isReading: false,
+      isDrawerOpen: false,
+      isMenuOpen: false,
+      hasError: false,
     };
   },
-  computed: {
-    contentStyle() {
-      return {
-        fontSize: `${this.fontSize}px`,
-        backgroundColor: this.backgroundColor,
-      };
-    },
-  },
   methods: {
-    toggleSettings() {
-      this.showSettings = !this.showSettings;
+    toggleMenu() {
+      this.isMenuOpen = !this.isMenuOpen;
     },
-    closeSettings() {
-      this.showSettings = false;
+    toggleDrawer() {
+      this.isDrawerOpen = !this.isDrawerOpen;
     },
-    prevChapter() {
-      // 上一章逻辑
-      console.log('上一章');
+    prevPage() {
+      // 上一页逻辑
     },
-    nextChapter() {
-      // 下一章逻辑
-      console.log('下一章');
+    nextPage() {
+      // 下一页逻辑
     },
-    flipPage() {
-      this.isFlipped = !this.isFlipped;
-      if (this.isFlipped) {
-        // 翻页后加载下一页内容
-        this.currentPageContent = this.nextPageContent;
-        this.nextPageContent = '这里是新加载的下一页内容...';
-      }
+    retry() {
+      // 重试逻辑
     },
   },
 };
@@ -92,70 +106,129 @@ export default {
 
 <style scoped>
 .novel-reader {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 20px;
 }
 
-.header {
+.search-bar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 20px;
 }
 
-.book-container {
-  perspective: 1000px;
+.search-bar input {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
-.page {
-  width: 80%;
-  height: 80%;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.6s;
+.search-bar button {
+  padding: 10px;
+  margin-left: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.page-flipped {
-  transform: rotateY(180deg);
+.announcement {
+  background-color: #f8f9fa;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 4px;
 }
 
-.page-front, .page-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  padding: 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  background: white;
-  overflow-y: auto;
-  line-height: 1.6;
-}
-
-.page-back {
-  transform: rotateY(180deg);
-}
-
-.footer {
+.category-nav {
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
-.settings-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
+.category-item {
+  padding: 10px;
+  margin-right: 10px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.novel-list {
+  margin-bottom: 20px;
+}
+
+.novel-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.reading-page {
+  position: relative;
+}
+
+.content {
   padding: 20px;
-  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100%;
+  background-color: #fff;
+  transition: left 0.3s;
   z-index: 1000;
+}
+
+.drawer.open {
+  left: 0;
+}
+
+.drawer-content {
+  padding: 20px;
+}
+
+.menu {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.menu button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.error-page {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8d7da;
+  border-radius: 4px;
+}
+
+.error-page button {
+  padding: 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 </style>

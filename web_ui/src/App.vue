@@ -228,4 +228,9 @@ watch(
 .fade-leave-to {
   opacity: 0;
 }
+@media (max-width: 720px) {
+  .app-header .header-right {
+    display:none !important;
+  }
+}
 </style>

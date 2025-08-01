@@ -33,8 +33,8 @@
       <div class="login-right">
         <a-card class="login-card" :bordered="false">
           <a-form :model="form" @submit="handleSubmit">
-            <a-form-item field="username" label="用户名">
-              <a-input v-model="form.username" placeholder="请输入用户名">
+            <a-form-item field="username" label="帐号">
+              <a-input v-model="form.username" placeholder="请输入帐号">
                 <template #prefix><icon-user /></template>
               </a-input>
             </a-form-item>
@@ -520,6 +520,30 @@ const handleSubmit = async () => {
   
   .login-ad {
     display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .login-container .login-left .login-intro{
+    font-size: 2rem !important;
+    margin-bottom:0 !important;
+  }
+  .login-container .login-left .login-intro .login-features,.intro-text {
+    display:none !important;
+  }
+  .login-container .login-right button {
+    width: 60% !important;
+  }
+  .login-container .login-right {
+    width: 100% !important;
+    flex: none !important;
+  }
+  .login-container .login-left {
+    flex: none !important;
+  }
+  .login-container .login-card {
+    width: 100% !important;
+    padding:0 !important;
   }
 }
 </style>

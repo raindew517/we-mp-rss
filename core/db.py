@@ -14,6 +14,7 @@ class Db:
     def __init__(self):
         self._session_factory: Optional[sessionmaker] = None
         self.engine = None
+        self.init(cfg.get("db"))
     def get_engine(self) -> Engine:
         """Return the SQLAlchemy engine for this database connection."""
         if self.engine is None:
