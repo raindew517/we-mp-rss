@@ -6,14 +6,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 from core.models import User as DBUser
-from core.db import DB
 from core.config import  cfg,API_BASE
 from sqlalchemy.orm import Session
 from core.models import User
+import core.db  as db
 from passlib.context import CryptContext
 import json
 
-
+DB=db.Db(tag="用户连接")
 SECRET_KEY = cfg.get("secret","csol2025")  # 生产环境应使用更安全的密钥
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(cfg.get("token_expire_minutes",30))

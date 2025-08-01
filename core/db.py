@@ -5,15 +5,18 @@ from typing import Optional, List
 from .models import Feed, Article
 from .config import cfg
 from core.models.base import Base  
-from core.print import print_warning,print_info,print_error
+from core.print import print_warning,print_info,print_error,print_success
 # 声明基类
 # Base = declarative_base()
 
 class Db:
     connection_str: str=None
-    def __init__(self):
-        self._session_factory: Optional[sessionmaker] = None
+    def __init__(self,tag:str="默认",User_In_Thread=True):
+        self.Session= None
         self.engine = None
+        self.User_In_Thread=User_In_Thread
+        self.tag=tag
+        print_success(f"[{tag}]连接初始化")
         self.init(cfg.get("db"))
     def get_engine(self) -> Engine:
         """Return the SQLAlchemy engine for this database connection."""
@@ -38,6 +41,7 @@ class Db:
                     open(db_path, 'w').close()
                     
             self.engine = create_engine(con_str,pool_size=10, max_overflow=300, pool_recycle=3600, pool_pre_ping=True, echo=False)
+           
         except Exception as e:
             print(f"Error creating database connection: {e}")
             raise
@@ -129,16 +133,24 @@ class Db:
         
     def get_session(self):
         """获取新的数据库会话"""
-        if self._session_factory is None:
-            self._session_factory = scoped_session(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
-        session = self._session_factory()
+        UseInThread=self.User_In_Thread
+        def _session():
+            if UseInThread:
+                self.Session=scoped_session(sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=True))
+            else:
+                self.Session=(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
+            return self.Session
+        if self.Session is None:
+            _session()
+        
+        session = self.Session()
         # 检查会话是否已经关闭
         if not session.is_active:
-            from core.print import print_warning
-            print_warning("Session is already closed.")
-            return scoped_session(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
+            from core.print import print_error
+            print_error(f"[{self.tag}] Session is already closed.")
+            _session()
+            return self.Session()
         return session
-        
     def session_dependency(self):
         """FastAPI依赖项，用于请求范围的会话管理"""
         session = self.get_session()
@@ -148,5 +160,5 @@ class Db:
             session.remove()
 
 # 全局数据库实例
-DB = Db()
+DB = Db(User_In_Thread=False)
 DB.init(cfg.get("db"))

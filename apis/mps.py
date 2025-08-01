@@ -10,9 +10,12 @@ from core.config import cfg
 from core.res import save_avatar_locally
 import io
 import os
+from jobs.article import UpdateArticle
 router = APIRouter(prefix=f"/mps", tags=["公众号管理"])
-def UpdateArticle(art:dict):
-            return DB.add_article(art)
+# import core.db as db
+# UPDB=db.Db("数据抓取")
+# def UpdateArticle(art:dict):
+#             return UPDB.add_article(art)
 
 
 @router.get("/search/{kw}", summary="搜索公众号")

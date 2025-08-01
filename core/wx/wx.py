@@ -142,7 +142,7 @@ def get_list(faker_id:str=None,mp_id:str=None,is_add:bool=False):
     data=get_Articles(faker_id)
     try:
         data=data['publish_page']['publish_list']
-        wx_db=db.Db()
+        wx_db=db.Db(tag="获取公众号列表")
         wx_db.init(cfg.get('db'))
         for i in data:
             art=i['publish_info']

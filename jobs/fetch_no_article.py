@@ -5,7 +5,7 @@ from time import sleep
 from core.print import print_success,print_error
 import random
 from driver.wxarticle import Web
-DB=db.Db()
+DB=db.Db(tag="内容修正")
 def fetch_articles_without_content():
     """
     查询content为空的文章，调用微信内容提取方法获取内容并更新数据库
