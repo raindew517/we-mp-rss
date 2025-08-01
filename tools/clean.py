@@ -1,7 +1,7 @@
 from core.models.article import Article
 from sqlalchemy import func
 import core.db as db
-DB=db.DB()
+DB=db.Db()
 def clean_duplicate_articles():
     """
     清理重复的文章
