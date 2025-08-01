@@ -13,5 +13,6 @@ if __name__ == '__main__':
     else:
         print_warning("未开启定时任务")
     print("启动服务器")
-    uvicorn.run("web:app", host="0.0.0.0", port=int(cfg.get("port",8001)), reload=True,reload_excludes=['static','web_ui'])
+    DEBUG=cfg.get("debug",False)
+    uvicorn.run("web:app", host="0.0.0.0", port=int(cfg.get("port",8001)), reload=DEBUG,reload_excludes=['static','web_ui','data'])
     pass

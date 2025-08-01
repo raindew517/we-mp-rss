@@ -73,6 +73,7 @@ async def get_articles(
     status: str = Query(None),
     search: str = Query(None),
     mp_id: str = Query(None),
+    has_content:bool=Query(False),
     current_user: dict = Depends(get_current_user)
 ):
     session = DB.get_session()
@@ -81,7 +82,8 @@ async def get_articles(
         
         # 构建查询条件
         query = session.query(ArticleBase)
-        
+        if has_content:
+            query=session.query(Article)
         if status:
             query = query.filter(Article.status == status)
         else:

@@ -134,8 +134,9 @@ class Db:
         session = self._session_factory()
         # 检查会话是否已经关闭
         if not session.is_active:
-            print("Session is already closed.")
-            return self._session_factory()
+            from core.print import print_warning
+            print_warning("Session is already closed.")
+            return scoped_session(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
         return session
         
     def session_dependency(self):

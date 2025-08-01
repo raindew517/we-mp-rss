@@ -73,7 +73,8 @@ def get_user(username: str) -> Optional[dict]:
             return user_dict
         return None
     except Exception as e:
-        print(f"获取用户错误: {str(e)}")
+        from core.print import print_error
+        print_error(f"获取用户错误: {str(e)}")
         return None
         
 def clear_user_cache(username: str):
