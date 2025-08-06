@@ -686,7 +686,11 @@ const exportArticles = () => {
   display: flex;
   margin-bottom: 20px;
 }
-
+.arco-drawer-body img{
+  max-width: 100vw !important;
+  margin: 0 auto !important;
+  padding:0 !important;
+}
 @media (max-width: 768px) {
   .a-layout-sider {
     width: 100% !important;
