@@ -23,7 +23,8 @@ class Db:
         if self.engine is None:
             raise ValueError("Database connection has not been initialized.")
         return self.engine
-    
+    def get_session_factory(self):
+        return sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True, future=True)
     def init(self, con_str: str) -> None:
         """Initialize database connection and create tables"""
         try:
@@ -38,8 +39,18 @@ class Db:
                     except Exception as e:
                         pass
                     open(db_path, 'w').close()
-            self.engine = create_engine(con_str,pool_size=5, max_overflow=300, pool_recycle=3600, pool_pre_ping=True, echo=False)
-           
+            self.engine = create_engine(con_str,
+                                     pool_size=2,          # 最小空闲连接数
+                                     max_overflow=10,      # 允许的最大溢出连接数
+                                     pool_timeout=5,      # 获取连接时的超时时间（秒）
+                                     echo=False,
+                                     pool_recycle=60,  # 连接池回收时间（秒）
+                                     isolation_level="AUTOCOMMIT",  # 设置隔离级别
+                                    #  isolation_level="READ COMMITTED",  # 设置隔离级别
+                                    #  query_cache_size=0,
+                                     connect_args={"check_same_thread": False} if con_str.startswith('sqlite:///') else {}
+                                     )
+            self.session_factory=self.get_session_factory()
         except Exception as e:
             print(f"Error creating database connection: {e}")
             raise
@@ -55,8 +66,9 @@ class Db:
         
     def close(self) -> None:
         """Close the database connection"""
-        if self._session_factory:
-            self._session_factory.remove()
+        if self.SESSION:
+            self.SESSION.close()
+            self.SESSION.remove()
             
     def __enter__(self):
         return self
@@ -128,15 +140,37 @@ class Db:
     def get_faker_id(self, mp_id:str):
         data = self.get_mps(mp_id)
         return data.faker_id
-        
+    def expire_all(self):
+        if self.Session:
+            self.Session.expire_all()    
+    def bind_event(self,session):
+        # Session Events
+        @event.listens_for(session, 'before_commit')
+        def receive_before_commit(session):
+            print("Transaction is about to be committed.")
+
+        @event.listens_for(session, 'after_commit')
+        def receive_after_commit(session):
+            print("Transaction has been committed.")
+
+        # Connection Events
+        @event.listens_for(self.engine, 'connect')
+        def connect(dbapi_connection, connection_record):
+            print("New database connection established.")
+
+        @event.listens_for(self.engine, 'close')
+        def close(dbapi_connection, connection_record):
+            print("Database connection closed.")
     def get_session(self):
         """获取新的数据库会话"""
         UseInThread=self.User_In_Thread
         def _session():
             if UseInThread:
-                self.Session=(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
+                self.Session=scoped_session(self.session_factory)
+                # self.Session=self.session_factory
             else:
-                self.Session=(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
+                self.Session=self.session_factory
+            # self.bind_event(self.Session)
             return self.Session
         
         
@@ -144,10 +178,12 @@ class Db:
             _session()
         
         session = self.Session()
+        session.expire_all()
+        session.expire_on_commit = True  # 确保每次提交后对象过期
         # 检查会话是否已经关闭
         if not session.is_active:
-            from core.print import print_error
-            print_error(f"[{self.tag}] Session is already closed.")
+            from core.print import print_info
+            print_info(f"[{self.tag}] Session is already closed.")
             _session()
             return self.Session()
         return session
