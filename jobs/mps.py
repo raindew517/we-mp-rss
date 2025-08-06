@@ -56,9 +56,15 @@ def do_job(mp=None,task:MessageTask=None):
             print_success(f"任务[{mp.mp_name}]执行成功,{count}成功条数")
 
 from core.queue import TaskQueue
-def add_job(feeds:list[Feed]=None,task:MessageTask=None):
+def add_job(feeds:list[Feed]=None,task:MessageTask=None,isTest=False):
+    if isTest:
+        TaskQueue.clear_queue()
     for feed in feeds:
         TaskQueue.add_task(do_job,feed,task)
+        if isTest:
+            print(f"测试任务，{feed.mp_name}，加入队列成功")
+            reload_job()
+            break
         print(f"{feed.mp_name}，加入队列成功")
     print_success(TaskQueue.get_queue_info())
     pass
@@ -77,16 +83,26 @@ def reload_job():
     TaskQueue.clear_queue()
     start_job()
 
+def run(job_id:str=None,isTest=False):
+    from .taskmsg import get_message_task
+    tasks=get_message_task(job_id)
+    if not tasks:
+        print("没有任务")
+        return None
+    for task in tasks:
+            #添加测试任务
+            from core.print import print_warning
+            print_warning(f"{task.name} 添加到队列运行")
+            add_job(get_feeds(task),task,isTest=isTest)
+            pass
+    return tasks
 def start_job(job_id:str=None):
-    #开启自动同步未同步 文章任务
-    from jobs.fetch_no_article import start_sync_content
-    start_sync_content()
-    
     from .taskmsg import get_message_task
     tasks=get_message_task(job_id)
     if not tasks:
         print("没有任务")
         return
+    tag="定时采集"
     for task in tasks:
         cron_exp=task.cron_exp
         if not cron_exp:
@@ -94,14 +110,17 @@ def start_job(job_id:str=None):
             continue
         if DEBUG:
             cron_exp="* * * * *"
-            # cron_exp="* * * * * *"
             pass
-        job_id=scheduler.add_cron_job(add_job,cron_expr=cron_exp,args=[get_feeds(task),task],job_id=str(task.id))
+        job_id=scheduler.add_cron_job(add_job,cron_expr=cron_exp,args=[get_feeds(task),task],job_id=str(task.id),tag="定时采集")
         print(f"已添加任务: {job_id}")
     scheduler.start()
     print("启动任务")
-
+def start_all_task():
+      #开启自动同步未同步 文章任务
+    from jobs.fetch_no_article import start_sync_content
+    start_sync_content()
+    start_job()
 if __name__ == '__main__':
     # do_job()
-    # start_job()
+    # start_all_task()
     pass

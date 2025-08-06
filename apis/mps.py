@@ -29,12 +29,12 @@ async def search_mp(
     try:
         result = search_Biz(kw,limit=limit,offset=offset)
         data={
-            'list':result.get('list'),
+            'list':result.get('list') if result is not None else [],
             'page':{
                 'limit':limit,
                 'offset':offset
             },
-            'total':result.get('total')
+            'total':result.get('total') if result is not None else 0
         }
         return success_response(data)
     except Exception as e:
@@ -43,7 +43,7 @@ async def search_mp(
             status_code=status.HTTP_201_CREATED,
             detail=error_response(
                 code=50001,
-                message=f"搜索公众号失败,请重新扫码授权！{str(e)}",
+                message=f"搜索公众号失败,请重新扫码授权！",
             )
         )
 

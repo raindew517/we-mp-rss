@@ -19,7 +19,8 @@ const fetchTags = async () => {
       skip: (pagination.value.current - 1) * pagination.value.pageSize,
       limit: pagination.value.pageSize
     })
-    tags.value = res.data
+    console.log(res)
+    tags.value = res.list||[]
     pagination.value.total = res.total || 0
   } catch (error) {
     Message.error('获取标签列表失败')
@@ -66,7 +67,6 @@ onMounted(() => {
         @page-change="handlePageChange"
       >
         <template #columns>
-          <a-table-column title="ID" data-index="id" />
           <a-table-column title="标签名称" data-index="name" />
           <a-table-column title="状态" data-index="status">
             <template #cell="{ record }">

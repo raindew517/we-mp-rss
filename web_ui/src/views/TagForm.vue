@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getTag, createTag, updateTag } from '@/api/tagManagement'
 import type { Tag, TagCreate } from '@/types/tagManagement'
 import { Message } from '@arco-design/web-vue'
+import { uploadCover } from '@/api/tagManagement'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,12 +27,50 @@ const fetchTag = async (id: string) => {
   try {
     loading.value = true
     const res = await getTag(id)
-    formModel.value = res.data
+    formModel.value = res
   } catch (error) {
     Message.error('获取标签详情失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleUploadChange = async (options: any) => {
+  const file = options.fileItem?.file || options.file
+  
+  // 文件类型验证
+  if (!file?.type?.startsWith('image/')) {
+    Message.error('请选择图片文件 (JPEG/PNG)')
+    return
+  }
+
+  // 文件大小验证 (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    Message.error('图片大小不能超过2MB')
+    return
+  }
+
+  try {
+    const res = await uploadCover(file)
+    formModel.value.cover = res.avatar
+  } catch (error) {
+    console.error('上传错误:', error)
+    Message.error(`上传失败: ${error.response?.data?.message || error.message || '服务器错误'}`)
+  } 
+  return false
+}
+
+const handleExceed = () => {
+  Message.warning('只能上传一个封面文件')
+}
+
+const handleUploadError = (error: Error) => {
+  Message.error(`上传出错: ${error.message || '文件上传失败'}`)
+}
+
+const handleImageError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  img.src = '/default-cover.png'
 }
 
 const handleSubmit = async () => {
@@ -81,11 +120,29 @@ onMounted(() => {
 
         <a-form-item label="封面图" field="cover">
           <a-upload
-            v-model:file-list="formModel.cover"
-            action="/api/upload"
+            :custom-request="handleUploadChange"
+            :show-file-list="false"
+            accept="image/*"
             :limit="1"
-            list-type="picture-card"
-          />
+            :max-size="2048"
+            @exceed="handleExceed"
+            @error="handleUploadError"
+          >
+            <template #upload-button>
+              <div class="cover-upload">
+                <img 
+                  v-if="formModel.cover" 
+                  :src="formModel.cover" 
+                  alt="cover"
+                  @error="handleImageError"
+                />
+                <icon-image v-else />
+                <div class="upload-mask">
+                  <icon-edit />
+                </div>
+              </div>
+            </template>
+          </a-upload>
         </a-form-item>
 
         <a-form-item label="简介" field="intro">
@@ -119,6 +176,45 @@ onMounted(() => {
 
 <style scoped>
 .tag-form {
-  padding: 16px;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cover-upload {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  cursor: pointer;
+  border: 1px dashed var(--color-border-2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cover-upload img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.cover-upload:hover .upload-mask {
+  opacity: 1;
 }
 </style>

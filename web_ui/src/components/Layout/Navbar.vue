@@ -11,12 +11,12 @@
         </template>
         订阅管理
       </a-menu-item>
-      <!-- <a-menu-item key="/tags">
+      <a-menu-item key="/tags">
         <template #icon>
-          <icon-notification />
+          <icon-tag />
         </template>
         标签管理
-      </a-menu-item> -->
+      </a-menu-item>
       <a-menu-item key="/message-tasks">
         <template #icon>
           <icon-notification />
@@ -35,6 +35,11 @@
         </template>
         系统信息
       </a-menu-item>
+       <a-menu-item key="/reader">
+        <template #icon>
+          <icon-read />
+        </template>
+      </a-menu-item>
     </a-menu>
   </a-layout-header>
 </template>
@@ -42,7 +47,7 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-
+import TextIcon from '@/components/TextIcon.vue'
 const router = useRouter()
 const route = useRoute()
 const selectedKeys = ref<string[]>(['/'])

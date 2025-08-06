@@ -6,6 +6,7 @@ from typing import Dict
 from core.print import print_error,print_info,print_success,print_warning
 import time
 import re
+from core.config import cfg
 
 class WXArticleFetcher:
     """微信公众号文章获取器
@@ -93,6 +94,9 @@ class WXArticleFetcher:
               # 等待页面加载
             body=driver.find_element(By.TAG_NAME,"body").text
             info["content"]=body
+            if cfg.get("export.pdf",False):
+                self.export_to_pdf(f"./data/{url}.pdf")
+                pass
             if "该内容已被发布者删除" in body or "The content has been deleted by the author." in body:
                 info["content"]="DELETED"
                 raise Exception("该内容已被发布者删除")
@@ -175,4 +179,25 @@ class WXArticleFetcher:
         """销毁文章获取器"""
         if hasattr(WXArticleFetcher, 'controller'):
             WXArticleFetcher.controller.close()
+
+    def export_to_pdf(self, output_path=None):
+        """将文章内容导出为 PDF 文件
+        
+        Args:
+            output_path: 输出 PDF 文件的路径（可选）
+        """
+        try:
+            # 使用浏览器打印功能生成 PDF
+            if output_path:
+                import os
+                output_path=os.path.abspath(output_path)
+                self.driver.execute_script(f"window.print({{'printBackground': true, 'destination': 'save-as-pdf', 'outputPath': '{output_path}'}});")
+                time.sleep(3)
+            else:
+                self.driver.execute_script("window.print();")
+            print_success(f"PDF 文件已生成{output_path}")
+        except Exception as e:
+            print_error(f"生成 PDF 失败: {str(e)}")
+
+    
 Web=WXArticleFetcher()

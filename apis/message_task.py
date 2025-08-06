@@ -89,6 +89,35 @@ async def get_message_task(
         return success_response(data=message_task)
     except Exception as e:
         return error_response(code=500, message=str(e))
+@router.get("/{task_id}/run", summary="执行单个消息任务详情")
+async def run_message_task(
+    task_id: str,
+    isTest:bool=Query(False),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    执行单个消息任务详情
+    
+    参数:
+        task_id: 消息任务ID
+        db: 数据库会话
+        current_user: 当前认证用户
+        
+    返回:
+        包含消息任务详情的成功响应，或错误响应
+        
+    异常:
+        404: 消息任务不存在
+        500: 数据库查询异常
+    """
+    try:
+        from jobs.mps import run
+        message_task=run(task_id,isTest=isTest)
+        if not message_task:
+            raise HTTPException(status_code=404, detail="Message task not found")
+        return success_response(data=message_task)
+    except Exception as e:
+        return error_response(code=500, message=str(e))
 
 
 class MessageTaskCreate(BaseModel):

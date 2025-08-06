@@ -7,11 +7,12 @@ from core.print import print_error, print_info, print_warning, print_success
 class TaskQueueManager:
     """任务队列管理器，用于管理和执行排队任务"""
     
-    def __init__(self,maxsize=0):
+    def __init__(self,maxsize=0,tag:str=""):
         """初始化任务队列"""
         self._queue = queue.Queue(maxsize=maxsize)
         self._lock = threading.Lock()
         self._is_running = False
+        self.tag=tag
         
     def add_task(self, task: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         """添加任务到队列
@@ -23,7 +24,7 @@ class TaskQueueManager:
         """
         with self._lock:
             self._queue.put((task, args, kwargs))
-        print_success(f"队列任务添加成功")
+        print_success(f"{self.tag}队列任务添加成功")
     def run_task_background(self)->None:
         threading.Thread(target=self.run_tasks, daemon=True).start()  
         print_warning("队列任务后台运行")
@@ -50,7 +51,7 @@ class TaskQueueManager:
                         task(*args, **kwargs)
                         # 记录任务执行时间
                         duration = time.time() - start_time
-                        print_info(f"任务执行完成，耗时: {duration:.2f}秒")
+                        print_info(f"\n任务执行完成，耗时: {duration:.2f}秒")
                     except Exception as e:
                         print_error(f"队列任务执行失败: {e}")
                         # raise
@@ -113,7 +114,7 @@ class TaskQueueManager:
                 except queue.Empty:
                     break
             print_success("队列已删除")
-TaskQueue = TaskQueueManager()
+TaskQueue = TaskQueueManager(tag="默认队列")
 TaskQueue.run_task_background()
 if __name__ == "__main__":
     def task1():

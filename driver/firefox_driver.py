@@ -63,7 +63,20 @@ class FirefoxController:
     
     def _get_latest_firefox_url(self):
         """获取最新版Firefox下载链接"""
-        return "https://cdn.stubdownloader.services.mozilla.com/builds/firefox-beta-latest-ssl/zh-CN/win64/2bcaf1071892df9bcf7a233fbc4800c1044ce1f73f4d94d07b2fbdad3735d313/Firefox%20Setup%20139.0b10.exe"
+        import requests
+        try:
+            # 使用 Mozilla 的 API 获取最新版本信息
+            response = requests.get("https://product-details.mozilla.org/1.0/firefox_versions.json")
+            response.raise_for_status()
+            versions = response.json()
+            latest_version = versions["LATEST_FIREFOX_VERSION"]
+            
+            # 构建下载链接（适用于 Windows 64 位中文版）
+            return f"https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=zh-CN"
+        except Exception as e:
+            print(f"获取最新 Firefox 下载链接失败: {e}")
+            # 提供一个备用链接以防 API 不可用
+            return "https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=zh-CN"
     def _install_firefox_windows(self):
         """Windows平台安装Firefox"""
         import tempfile

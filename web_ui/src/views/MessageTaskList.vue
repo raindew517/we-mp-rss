@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { listMessageTasks, deleteMessageTask,FreshJobApi,FreshJobByIdApi } from '@/api/messageTask'
+import { listMessageTasks, deleteMessageTask,FreshJobApi,FreshJobByIdApi,RunMessageTask } from '@/api/messageTask'
 import type { MessageTask } from '@/types/messageTask'
 import { useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
@@ -125,6 +125,23 @@ const handleDelete = async (id: number) => {
     }
   })
 }
+const runTask = async (id: number,isTest:boolean=false) => {
+  Modal.confirm({
+    title: '确认执行',
+    content: '确定要执行这条消息任务吗？',
+    okText: '确认',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        let res = await RunMessageTask(id,isTest)
+        Message.success(res?.message||'执行成功')
+      } catch (error) {
+        console.error(error)
+        Message.error('执行失败')
+      }
+    }
+  })
+}
 
 onMounted(() => {
   fetchTaskList()
@@ -173,10 +190,12 @@ onMounted(() => {
               </a-tag>
             </template>
           </a-table-column>
-          <a-table-column title="操作" :width="200">
+          <a-table-column title="操作" :width="260">
             <template #cell="{ record }">
               <a-space>
                 <a-button size="mini" type="primary" @click="handleEdit(record.id)">编辑</a-button>
+                <a-button size="mini" type="dashed" @click="runTask(record.id,true)">测试</a-button>
+                <a-button size="mini" type="dashed" @click="runTask(record.id)">执行</a-button>
                 <a-button size="mini" status="danger" @click="handleDelete(record.id)">删除</a-button>
               </a-space>
             </template>

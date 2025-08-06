@@ -55,7 +55,9 @@ class TaskScheduler:
                     cron_expr: str,
                     args: Optional[tuple] = None,
                     kwargs: Optional[dict] = None,
-                    job_id: Optional[str] = None) -> str:
+                    job_id: Optional[str] = None,
+                    tag:str=""
+                    ) -> str:
         """
         添加一个cron定时任务
         
@@ -127,7 +129,7 @@ class TaskScheduler:
                         # logger.info(f"Executing job {job_id or 'anonymous'}")
                         return func(*args, **kwargs)
                     except Exception as e:
-                        logger.error(f"Job {job_id or 'anonymous'} failed: {str(e)}")
+                        logger.error(f"Job {tag} {job_id or 'anonymous'} failed: {str(e)}")
                         raise
                 
                 job = self._scheduler.add_job(
@@ -138,7 +140,7 @@ class TaskScheduler:
                     id=str(job_id)
                 )
                 self._jobs[job.id] = job
-                logger.info(f"Successfully added job {job.id}")
+                logger.info(f"Successfully added job {tag} {job.id}")
                 return job.id
             except Exception as e:
                 logger.error(f"Failed to add cron job: {str(e)}")

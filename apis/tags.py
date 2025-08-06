@@ -13,7 +13,6 @@ from core.auth import get_current_user, requires_permission
 # 需要管理员权限执行写操作
 router = APIRouter(prefix="/tags", tags=["标签管理"])
 
-
 @router.get("", 
     summary="获取标签列表",
     description="分页获取所有标签信息")
@@ -41,7 +40,7 @@ async def get_tags(offset: int = 0, limit: int = 100, db: Session = Depends(get_
         "total": total
     })
 
-@router.post("", response_model=Tags,
+@router.post("",
     summary="创建新标签",
     description="创建一个新的标签"
    )
@@ -64,11 +63,13 @@ async def create_tag(tag: TagsCreate, db: Session = Depends(get_db),cur_user: di
     - 成功: 包含新建标签信息的响应
     - 失败: 错误响应
     """
+    import uuid
     try:
         db_tag = TagsModel(
-            name=tag.name,
-            cover=tag.cover,
-            intro=tag.intro,
+            id=str(uuid.uuid4()),
+            name=tag.name or '',
+            cover=tag.cover or '',
+            intro=tag.intro or '',
             status=tag.status,
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -78,6 +79,8 @@ async def create_tag(tag: TagsCreate, db: Session = Depends(get_db),cur_user: di
         db.refresh(db_tag)
         return success_response(data=db_tag)
     except Exception as e:
+         from core.print  import print_error
+         print_error(e)
          raise HTTPException(
             status_code=status.HTTP_201_CREATED,
             detail=error_response(
@@ -86,10 +89,7 @@ async def create_tag(tag: TagsCreate, db: Session = Depends(get_db),cur_user: di
             )
         )
 
-@router.get("/{tag_id}", response_model=Tags,
-    summary="获取单个标签详情",
-    description="根据标签ID获取标签详细信息",
-  )
+@router.get("/{tag_id}", summary="获取单个标签详情",  description="根据标签ID获取标签详细信息")
 async def get_tag(tag_id: str, db: Session = Depends(get_db),cur_user: dict = Depends(get_current_user)):
     """
     获取单个标签详情
@@ -106,7 +106,7 @@ async def get_tag(tag_id: str, db: Session = Depends(get_db),cur_user: dict = De
         return error_response(code=status.HTTP_201_CREATED, message="Tag not found")
     return success_response(data=tag)
 
-@router.put("/{tag_id}", response_model=Tags, 
+@router.put("/{tag_id}",
     summary="更新标签信息",
     description="根据标签ID更新标签信息",
  )

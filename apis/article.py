@@ -201,3 +201,97 @@ async def delete_article(
                 message=f"删除文章失败: {str(e)}"
             )
         )
+
+@router.get("/{article_id}/next", summary="获取下一篇文章")
+async def get_next_article(
+    article_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    session = DB.get_session()
+    try:
+        # 获取当前文章的发布时间
+        current_article = session.query(Article).filter(Article.id == article_id).first()
+        if not current_article:
+            raise HTTPException(
+                status_code=fast_status.HTTP_404_NOT_FOUND,
+                detail=error_response(
+                    code=40401,
+                    message="当前文章不存在"
+                )
+            )
+        
+        # 查询发布时间更晚的第一篇文章
+        next_article = session.query(Article)\
+            .filter(Article.publish_time > current_article.publish_time)\
+            .filter(Article.status != DATA_STATUS.DELETED)\
+            .filter(Article.mp_id == current_article.mp_id)\
+            .order_by(Article.publish_time.asc())\
+            .first()
+        
+        if not next_article:
+            raise HTTPException(
+                status_code=fast_status.HTTP_404_NOT_FOUND,
+                detail=error_response(
+                    code=40402,
+                    message="没有下一篇文章"
+                )
+            )
+        
+        return success_response(next_article)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
+            detail=error_response(
+                code=50001,
+                message=f"获取下一篇文章失败: {str(e)}"
+            )
+        )
+
+@router.get("/{article_id}/prev", summary="获取上一篇文章")
+async def get_prev_article(
+    article_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    session = DB.get_session()
+    try:
+        # 获取当前文章的发布时间
+        current_article = session.query(Article).filter(Article.id == article_id).first()
+        if not current_article:
+            raise HTTPException(
+                status_code=fast_status.HTTP_404_NOT_FOUND,
+                detail=error_response(
+                    code=40401,
+                    message="当前文章不存在"
+                )
+            )
+        
+        # 查询发布时间更早的第一篇文章
+        prev_article = session.query(Article)\
+            .filter(Article.publish_time < current_article.publish_time)\
+            .filter(Article.status != DATA_STATUS.DELETED)\
+            .filter(Article.mp_id == current_article.mp_id)\
+            .order_by(Article.publish_time.desc())\
+            .first()
+        
+        if not prev_article:
+            raise HTTPException(
+                status_code=fast_status.HTTP_404_NOT_FOUND,
+                detail=error_response(
+                    code=40403,
+                    message="没有上一篇文章"
+                )
+            )
+        
+        return success_response(prev_article)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
+            detail=error_response(
+                code=50001,
+                message=f"获取上一篇文章失败: {str(e)}"
+            )
+        )

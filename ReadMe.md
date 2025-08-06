@@ -11,11 +11,21 @@ docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  ghcr.io/rache
 ```
 http://<您的ip>:8001/  即可开启
 
-# 官方镜像和代理镜像
+# 官方镜像
 ```
 docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  rachelos/we-mp-rss:latest
+```
+# 代理镜像加速访问（国内访问速度更快）
+```
 docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  docker.1ms.run/rachelos/we-mp-rss:latest  docker.1ms.run/rachelos/we-mp-rss:latest
 ```
+
+# 感谢伙伴(排名不分先后)
+ cyChaos、 子健MeLift、 晨阳、 童总、 胜宇、 军亮、 余光、 一路向北、 水煮土豆丝、 人可、 须臾、 澄明
+
+
+
+
 
  <br/>
  <img src="https://github.com/user-attachments/assets/cbe924f2-d8b0-48b0-814e-7c06ccb1911c" height="60" />
@@ -160,8 +170,9 @@ copy config.example.yaml config.yaml
 - **如何调整定时任务间隔？**
   修改 `config.yaml` 中的 `interval` 或通过环境变量 `SPAN_INTERVAL` 设置。
 
-## 后续计划
-
-- 支持更多通知方式（如邮件、短信）。
-- 优化RSS生成逻辑。
-- 增加多语言支持。
+- **如何开启定时任务？**
+  1、修改 `config.yaml` 中的 `ENABLE_JOB` 或通过环境变量 `ENABLE_JOB` 设置 为True。
+  2、在UI界面的消息任务中，添加定时任务。
+  
+- **如何修改文章内容发送格式？**
+  修改 `config.yaml` 中的 `WEBHOOK.CONTENT_FORMAT` 或通过环境变量 `WEBHOOK.CONTENT_FORMAT` 设置。

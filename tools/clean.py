@@ -17,7 +17,6 @@ def clean_duplicate_articles():
         
         # 如果没有重复的标题，直接返回
         if not duplicate_titles:
-            session.close()
             return "没有找到重复的文章"
         
         # 获取所有重复的标题列表
@@ -45,8 +44,6 @@ def clean_duplicate_articles():
         session.commit()
     except:
         session.rollback()
-    finally:
-        session.close()
     return (f"已清理 {len(duplicates)} 篇重复文章", len(duplicates))
 
 if __name__ == "__main__":

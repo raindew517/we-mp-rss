@@ -11,6 +11,9 @@ export const listMessageTasks = (params?: { page?: number; pageSize?: number }) 
 export const getMessageTask = (id: number) => {
   return http.get<MessageTask>(`/wx/message_tasks/${id}`)
 }
+export const RunMessageTask = (id: number,isTest:boolean=false) => {
+  return http.get<MessageTask>(`/wx/message_tasks/${id}/run?isTest=${isTest}`)
+}
 
 export const createMessageTask = (data: MessageTaskUpdate) => {
   return http.post('/wx/message_tasks', data)

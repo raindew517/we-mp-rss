@@ -116,15 +116,21 @@
           <a-input-search v-model="searchText" placeholder="搜索文章标题" @search="handleSearch" @keyup.enter="handleSearch" allow-clear />
         </div>
 
-        <a-table :columns="columns" :data="articles" :loading="loading" :pagination="pagination" style="width: 100%"
-          @page-change="handlePageChange"  row-key="id"
+        <ResponsiveTable 
+          :columns="columns" 
+          :data="articles" 
+          :loading="loading" 
+          :pagination="pagination" 
           :row-selection="{
             type: 'checkbox',
             showCheckedAll: true,
             width: 50,
             fixed: true
           }"
-          v-model:selectedKeys="selectedRowKeys">
+          row-key="id"
+          @page-change="handlePageChange"
+          v-model:selectedKeys="selectedRowKeys"
+        >
           <template #status="{ record }">
             <a-tag :color="statusColorMap[record.status]">
               {{ statusTextMap[record.status] }}
@@ -132,7 +138,7 @@
           </template>
           <template #actions="{ record }">
             <a-space>
-              <a-button type="text" @click="viewArticle(record)">
+              <a-button type="text" @click="viewArticle(record)" :title="record.id">
                 <template #icon><icon-eye /></template>
               </a-button>
               <a-button type="text" status="danger" @click="deleteArticle(record.id)">
@@ -140,21 +146,23 @@
               </a-button>
             </a-space>
           </template>
-        </a-table>
+        </ResponsiveTable>
 
-        <a-modal 
+        <a-drawer 
           v-model:visible="articleModalVisible" 
           :title="currentArticle.title"
-          width="800px"
+          placement="left"
+          width="70vw"
           :footer="false"
+          :fullscreen="false"
         >
-          <div style="padding: 20px; max-height: 70vh; overflow-y: auto">
+          <div style="padding: 20px;  overflow-y: auto">
             <div v-html="currentArticle.content"></div>
             <div style="margin-top: 20px; color: var(--color-text-3); text-align: right">
               {{ currentArticle.time }}
             </div>
           </div>
-        </a-modal>
+        </a-drawer>
       </a-card>
     </a-layout-content>
   </a-layout>
@@ -166,7 +174,8 @@ import { Avatar } from '@/utils/constants'
 import { ref, onMounted, h } from 'vue'
 import axios from 'axios'
 import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode} from '@arco-design/web-vue/es/icon'
-import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle,ClearDuplicateArticle } from '@/api/article'
+import ResponsiveTable from '@/components/ResponsiveTable.vue'
+import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle,ClearDuplicateArticle,getArticleDetail } from '@/api/article'
 import { ExportOPML,ExportMPS,ImportMPS } from '@/api/export'
 import { getSubscriptions, UpdateMps} from '@/api/subscription'
 import { inject } from 'vue'
@@ -243,7 +252,7 @@ const columns = [
   {
     title: '更新时间',
     dataIndex: 'created_at',
-    width: '130',
+    width: '140',
     render: ({ record }) => h('span',
       { style: { color: 'var(--color-text-3)', fontSize: '12px' } },
       formatDateTime(record.created_at)
@@ -252,7 +261,7 @@ const columns = [
   {
     title: '发布时间',
     dataIndex: 'publish_time',
-    width: '130',
+    width: '140',
     render: ({ record }) => h('span',
       { style: { color: 'var(--color-text-3)', fontSize: '12px' } },
       formatTimestamp(record.publish_time)
@@ -470,28 +479,40 @@ const handleAddSuccess = () => {
   fetchArticles()
 }
 
-const viewArticle = (record: any) => {
+const viewArticle = async (_record: any) => {
+  loading.value = true;
+  let record=await getArticleDetail(_record?.id)
+  let source_tpl=`<a href="${record.url}" target="_blank">查看原文</a>`
   if (record.content) {
     // 处理图片链接，在所有图片链接前加上/static/res/logo/
-    const processedContent = record.content.replace(
+    const processedContent = source_tpl+record.content.replace(
       /(<img[^>]*src=["'])(?!\/static\/res\/logo\/)([^"']*)/g,
       '$1/static/res/logo/$2'
     )
     currentArticle.value = {
       title: record.title,
       content: processedContent,
-      time: formatDateTime(record.created_at)
+      time: formatDateTime(record.created_at),
+      url: record.url
     }
     articleModalVisible.value = true
   } else {
-    window.open(record.url, '_blank')
+    currentArticle.value = {
+      title: record.title,
+      content: source_tpl,
+      time: formatDateTime(record.created_at),
+      url: record.url
+    }
+    articleModalVisible.value = true
   }
+  loading.value = false;
 }
 
 const currentArticle = ref({
   title: '',
   content: '',
-  time: ''
+  time: '',
+  url: ''
 })
 const articleModalVisible = ref(false)
 
@@ -675,5 +696,9 @@ const exportArticles = () => {
   .a-layout {
     flex-direction: column;
   }
+}
+
+.arco-drawer-body {
+  z-index: 9999 !important; /* 确保抽屉在其他内容之上 */
 }
 </style>

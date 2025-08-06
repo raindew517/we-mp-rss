@@ -27,7 +27,7 @@ def laxArticle():
 
     #公众号总数
     info.mp_all_count=session.query(Feed).distinct(Feed.id).count()
-    session.close()
+    # session.close()
     return info.__dict__
     pass
 ARTICLE_INFO=laxArticle()
