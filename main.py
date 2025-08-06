@@ -14,5 +14,5 @@ if __name__ == '__main__':
         print_warning("未开启定时任务")
     print("启动服务器")
     AutoReload=cfg.get("server.auto_reload",False)
-    uvicorn.run("web:app", host="0.0.0.0", port=int(cfg.get("port",8001)), reload=AutoReload,reload_excludes=['static','web_ui','data'],reload_includes=["*.py","*.yaml"])
+    uvicorn.run("web:app", host="0.0.0.0", port=int(cfg.get("port",8001)), reload=AutoReload,reload_excludes=['static','web_ui','data'])
     pass

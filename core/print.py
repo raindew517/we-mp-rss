@@ -1,6 +1,10 @@
 import sys
+import os
 from colorama import init, Fore, Back, Style
-init()  # 初始化colorama，确保Windows平台支持ANSI颜色
+# 确保在Linux下也能正确初始化colorama
+if os.name == 'posix':
+    os.environ['TERM'] = 'xterm-256color'  # 设置终端类型为支持颜色的终端
+init()  # 初始化colorama，确保跨平台支持ANSI颜色
 class ColorPrinter:
     """带颜色输出的打印工具类"""
     

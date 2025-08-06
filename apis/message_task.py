@@ -112,12 +112,33 @@ async def run_message_task(
     """
     try:
         from jobs.mps import run
-        message_task=run(task_id,isTest=isTest)
-        if not message_task:
+        mps={
+            "count":0,
+            "list":[]
+        }
+        tasks=run(task_id,isTest=isTest)
+        count=0
+        if not tasks:
             raise HTTPException(status_code=404, detail="Message task not found")
-        return success_response(data=message_task)
+        else:
+            import json
+            for task in tasks:
+                try:
+                    ids=json.loads(task.mps_id)
+                    count+=len(ids)
+                    mps['count']=count
+                    mps['list'].append(ids)
+                except Exception as e:
+                    print_error(e)
+                    pass
+        if isTest:
+            count=1
+        mps["message"]=f"执行成功，共执行更新{count}个订阅号"
+        return success_response(data=mps,message=f"执行成功，共执行更新{count}个订阅号")
+
     except Exception as e:
-        return error_response(code=500, message=str(e))
+        print_error(e)
+        return error_response(code=402, message=str(e))
 
 
 class MessageTaskCreate(BaseModel):

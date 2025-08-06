@@ -138,6 +138,7 @@ const runTask = async (id: number,isTest:boolean=false) => {
       } catch (error) {
         console.error(error)
         Message.error('执行失败')
+        console.log(error)
       }
     }
   })
@@ -194,8 +195,12 @@ onMounted(() => {
             <template #cell="{ record }">
               <a-space>
                 <a-button size="mini" type="primary" @click="handleEdit(record.id)">编辑</a-button>
-                <a-button size="mini" type="dashed" @click="runTask(record.id,true)">测试</a-button>
-                <a-button size="mini" type="dashed" @click="runTask(record.id)">执行</a-button>
+                <a-tooltip content="点击测试消息任务">
+                  <a-button size="mini" type="dashed" @click="runTask(record.id,true)">测试</a-button>
+                </a-tooltip>
+                <a-tooltip content="执行更新任务">
+                  <a-button size="mini" type="dashed" @click="runTask(record.id)">执行</a-button>
+                </a-tooltip>
                 <a-button size="mini" status="danger" @click="handleDelete(record.id)">删除</a-button>
               </a-space>
             </template>

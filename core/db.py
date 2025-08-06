@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Engine,Text
+from sqlalchemy import create_engine, Engine,Text,event
 from sqlalchemy.orm import sessionmaker, declarative_base,scoped_session
 from sqlalchemy import Column, Integer, String, DateTime
 from typing import Optional, List
@@ -28,7 +28,6 @@ class Db:
         """Initialize database connection and create tables"""
         try:
             self.connection_str=con_str
-            
             # 检查SQLite数据库文件是否存在
             if con_str.startswith('sqlite:///'):
                 import os
@@ -39,8 +38,7 @@ class Db:
                     except Exception as e:
                         pass
                     open(db_path, 'w').close()
-                    
-            self.engine = create_engine(con_str,pool_size=10, max_overflow=300, pool_recycle=3600, pool_pre_ping=True, echo=False)
+            self.engine = create_engine(con_str,pool_size=5, max_overflow=300, pool_recycle=3600, pool_pre_ping=True, echo=False)
            
         except Exception as e:
             print(f"Error creating database connection: {e}")
@@ -136,10 +134,12 @@ class Db:
         UseInThread=self.User_In_Thread
         def _session():
             if UseInThread:
-                self.Session=scoped_session(sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=True))
+                self.Session=(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
             else:
                 self.Session=(sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True))
             return self.Session
+        
+        
         if self.Session is None:
             _session()
         
@@ -151,6 +151,14 @@ class Db:
             _session()
             return self.Session()
         return session
+    def auto_refresh(self):
+        # 定义一个事件监听器，在对象更新后自动刷新
+        def receive_after_update(mapper, connection, target):
+            print(f"Refreshing object: {target}")
+        from core.models import MessageTask,Article
+        event.listen(Article,'after_update', receive_after_update)
+        event.listen(MessageTask,'after_update',receive_after_update)
+        
     def session_dependency(self):
         """FastAPI依赖项，用于请求范围的会话管理"""
         session = self.get_session()
