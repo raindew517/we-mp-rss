@@ -204,5 +204,5 @@ class Db:
             session.remove()
 
 # 全局数据库实例
-DB = Db(User_In_Thread=False)
+DB = Db(User_In_Thread=True)
 DB.init(cfg.get("db"))
