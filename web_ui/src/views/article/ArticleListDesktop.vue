@@ -126,7 +126,22 @@
             </template>
           </a-table>
 
-          <a-modal id="article-model"
+         
+          <a-modal v-model:visible="refreshModalVisible" title="刷新设置">
+            <a-form :model="refreshForm" :rules="refreshRules">
+              <a-form-item label="起始页" field="startPage">
+                <a-input-number v-model="refreshForm.startPage" :min="1" />
+              </a-form-item>
+              <a-form-item label="结束页" field="endPage">
+                <a-input-number v-model="refreshForm.endPage" :min="1" />
+              </a-form-item>
+            </a-form>
+            <template #footer>
+              <a-button @click="refreshModalVisible = false">取消</a-button>
+              <a-button type="primary" @click="handleRefresh">确定</a-button>
+            </template>
+          </a-modal>
+           <a-modal id="article-model"
             v-model:visible="articleModalVisible" 
             :title="currentArticle.title"
             placement="left"

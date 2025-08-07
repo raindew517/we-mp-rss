@@ -65,8 +65,8 @@ rss:
   #RSS分页大小 默认10
   page_size: ${RSS_PAGE_SIZE:-30}
 
-#登录会话有效时长 单位分钟 默认60分钟
-token_expire_minutes: ${TOKEN_EXPIRE_MINUTES:-60}
+#登录会话有效时长 单位分钟 默认4320分钟 3天
+token_expire_minutes: ${TOKEN_EXPIRE_MINUTES:-4320}
 
 cache:
   #缓存目录，默认为./data/cache

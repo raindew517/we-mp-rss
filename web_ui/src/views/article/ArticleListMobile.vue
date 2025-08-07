@@ -1,7 +1,7 @@
 <template>
   <a-spin :loading="fullLoading" tip="正在刷新..." size="large">
     <a-layout class="article-list">
-      <a-layout-content :style="{ padding: '20px', width: '100%', height: '100vh', overflow: 'auto' }" @scroll="handleScroll">
+      <a-layout-content :style="{ padding: '20px', width: '100%', height: '100%', overflow: 'auto' }" @scroll="handleScroll">
         <a-page-header 
           :title="activeFeed ? activeFeed.name : '全部'" 
            :show-back="false">
@@ -90,6 +90,10 @@
   >
     <div style="padding: 20px; overflow-y: auto;clear:both;">
       <div><h2>{{currentArticle.title}}</h2></div>
+        <div style="margin-top: 20px; color: var(--color-text-3); text-align: left;position:fixed;left:40%;top:-3px;width:100%;">
+        <a-link :href="currentArticle.url" target="_blank">上一篇 </a-link>
+        <a-link :href="currentArticle.url" target="_blank">下一篇 </a-link>
+       </div>
        <div style="margin-top: 20px; color: var(--color-text-3); text-align: left">
        <a-link :href="currentArticle.url" target="_blank">查看原文</a-link>
        更新时间 ：{{ currentArticle.time }}

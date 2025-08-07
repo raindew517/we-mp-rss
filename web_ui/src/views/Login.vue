@@ -125,7 +125,7 @@ const handleSubmit = async () => {
 
 <style scoped>
 .login-container {
-  height: 100vh;
+  height: 100%;
   padding: 0;
   margin: 0;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(168, 85, 247, 0.9) 100%);

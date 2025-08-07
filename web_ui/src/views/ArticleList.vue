@@ -21,3 +21,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
 </script>
+<style>
+#article-modal img{
+   max-width:100%;
+   border-width:0 !important;
+}
+</style>
