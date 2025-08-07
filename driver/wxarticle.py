@@ -94,9 +94,6 @@ class WXArticleFetcher:
               # 等待页面加载
             body=driver.find_element(By.TAG_NAME,"body").text
             info["content"]=body
-            if cfg.get("export.pdf",False):
-                self.export_to_pdf(f"./data/{url}.pdf")
-                pass
             if "该内容已被发布者删除" in body or "The content has been deleted by the author." in body:
                 info["content"]="DELETED"
                 raise Exception("该内容已被发布者删除")
@@ -115,7 +112,7 @@ class WXArticleFetcher:
             # print(og_title.get_attribute("content"))
             # 获取文章元数据
             title = og_title.get_attribute("content")
-
+            self.export_to_pdf(f"./data/{title}.pdf")
             author = driver.find_element(
                 By.CSS_SELECTOR, "#meta_content .rich_media_meta_text"
             ).text.strip()
@@ -156,7 +153,7 @@ class WXArticleFetcher:
             ele_logo = driver.find_element(By.CLASS_NAME, 'wx_follow_avatar').find_element(By.TAG_NAME, 'img')
             # 获取<img>标签的src属性
             logo_src = ele_logo.get_attribute('src')
-            ele_name = driver.find_element(By.CLASS_NAME, 'wx_follow_bd')
+            ele_name = driver.find_element(By.CLASS_NAME, 'wx_follow_nickname_con')
             title= ele_name.text
             info["mp_info"]={
                 "mp_name":title,
@@ -180,21 +177,22 @@ class WXArticleFetcher:
         if hasattr(WXArticleFetcher, 'controller'):
             WXArticleFetcher.controller.close()
 
-    def export_to_pdf(self, output_path=None):
+    def export_to_pdf(self, title=None):
         """将文章内容导出为 PDF 文件
         
         Args:
             output_path: 输出 PDF 文件的路径（可选）
         """
         try:
+            if cfg.get("export.pdf.enable",False)==False:
+                return
             # 使用浏览器打印功能生成 PDF
             if output_path:
                 import os
-                output_path=os.path.abspath(output_path)
+                pdf_path=cfg.get("export.pdf.dir","./data/pdf")
+                output_path=os.path.abspath(f"{pdf_path}/{title}.pdf")
                 self.driver.execute_script(f"window.print({{'printBackground': true, 'destination': 'save-as-pdf', 'outputPath': '{output_path}'}});")
                 time.sleep(3)
-            else:
-                self.driver.execute_script("window.print();")
             print_success(f"PDF 文件已生成{output_path}")
         except Exception as e:
             print_error(f"生成 PDF 失败: {str(e)}")

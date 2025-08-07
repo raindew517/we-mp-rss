@@ -98,3 +98,14 @@ log:
    file: ${LOG_FILE:-}
   #日志级别，默认为INFO，可选DEBUG, INFO, WARNING, ERROR, CRITICAL
    level: ${LOG_LEVEL:-INFO}
+export:
+   pdf: 
+    #是否启用PDF导出功能 默认False
+    enable: ${EXPORT_PDF:-False}
+    #PDF导出目录 默认./data/pdf
+    dir: ${EXPORT_PDF_DIR:-./data/pdf}
+   markdown:
+    #是否启用markdown导出功能 默认False
+    enable: ${EXPORT_MARKDOWN:-False}
+    #markdown导出目录 默认./data/markdown
+    dir: ${EXPORT_MARKDOWN_DIR:-./data/markdown}

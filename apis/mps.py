@@ -166,9 +166,36 @@ async def get_mp(
                 message="获取公众号详情失败"
             )
         )
+@router.get("/by_article/{mp_id}", summary="通过文章链接获取公众号详情")
+
+async def get_mp_by_article(
+    url: str,
+    # current_user: dict = Depends(get_current_user)
+):
+    session = DB.get_session()
+    try:
+        from driver.wxarticle import Web
+        info=Web.get_article_content(url)
+        if not info:
+            raise HTTPException(
+                status_code=status.HTTP_201_CREATED,
+                detail=error_response(
+                    code=40401,
+                    message="公众号不存在"
+                )
+            )
+        return success_response(info)
+    except Exception as e:
+        print(f"获取公众号详情错误: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_201_CREATED,
+            detail=error_response(
+                code=50001,
+                message="通过文章链接获取公众号详情"
+            )
+        )
 
 @router.post("", summary="添加公众号")
-
 async def add_mp(
     mp_name: str = Body(..., min_length=1, max_length=255),
     mp_cover: str = Body(None, max_length=255),

@@ -305,6 +305,9 @@ class FirefoxController:
             self._install_firefox()
             self._setup_driver()
             self.options.page_load_strategy = "eager"
+            # 禁用浏览器错误输出
+            self.options.set_preference("webdriver.log.driver", "OFF")
+            self.options.set_preference("webdriver.log.browser", "OFF")
             if headless:
                 self.options.add_argument("--headless") 
                 pass  
@@ -334,10 +337,12 @@ class FirefoxController:
         try:
             self.driver.get(url)
         except WebDriverException as e:
-            print(f"打开URL失败: {str(e)}")
-            print(e)
+            # print(f"打开URL失败: {str(e)}")
+            # print(e)
+            raise Exception(f"打开URL失败: {str(e)}")
         except Exception as e:
-            print(f"打开URL失败: {str(e)}")
+            # print(f"打开URL失败: {str(e)}")
+            raise Exception(f"打开URL失败: {str(e)}")
 
     def Close(self):
         """关闭浏览器"""
