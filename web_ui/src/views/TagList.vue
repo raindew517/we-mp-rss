@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { listTags, deleteTag } from '@/api/tagManagement'
 import type { Tag } from '@/types/tagManagement'
 import { Message } from '@arco-design/web-vue'
@@ -11,7 +11,18 @@ const pagination = ref({
   pageSize: 10,
   total: 0
 })
+const isMobile = ref(window.innerWidth < 768)
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 768
+}
 
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 const fetchTags = async () => {
   try {
     loading.value = true
@@ -61,6 +72,7 @@ onMounted(() => {
 
     <a-card>
       <a-table
+        v-if="!isMobile"
         :loading="loading"
         :data="tags"
         :pagination="pagination"
@@ -89,6 +101,37 @@ onMounted(() => {
           </a-table-column>
         </template>
       </a-table>
+
+      <a-list
+        v-else
+        :loading="loading"
+        :data="tags"
+        :pagination="pagination"
+        @page-change="handlePageChange"
+      >
+        <template #item="{ item }">
+          <a-list-item>
+            <a-list-item-meta>
+              <template #title>
+                {{ item.name }}
+                <a-tag v-if="item.status === 1" color="green" size="small">启用</a-tag>
+                <a-tag v-else color="red" size="small">禁用</a-tag>
+              </template>
+              <template #description>
+                创建时间: {{ item.created_at }}
+              </template>
+            </a-list-item-meta>
+            <a-space>
+              <a-button type="text" size="small" @click="$router.push(`/tags/edit/${item.id}`)">
+                编辑
+              </a-button>
+              <a-popconfirm content="确认删除该标签？" @ok="handleDelete(item.id)">
+                <a-button type="text" status="danger" size="small">删除</a-button>
+              </a-popconfirm>
+            </a-space>
+          </a-list-item>
+        </template>
+      </a-list>
     </a-card>
   </div>
 </template>

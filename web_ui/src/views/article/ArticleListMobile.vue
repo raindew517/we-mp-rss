@@ -1,7 +1,7 @@
 <template>
   <a-spin :loading="fullLoading" tip="正在刷新..." size="large">
     <a-layout class="article-list">
-      <a-layout-content :style="{ padding: '20px', width: '100%', height: 'calc(100vh - 64px)', overflow: 'auto' }" @scroll="handleScroll">
+      <a-layout-content :style="{ padding: '20px', width: '100%', height: '100vh', overflow: 'auto' }" @scroll="handleScroll">
         <a-page-header 
           :title="activeFeed ? activeFeed.name : '全部'" 
            :show-back="false">
@@ -28,7 +28,7 @@
                     <a-typography-text strong :heading="1"><strong>{{ item.title }}</strong></a-typography-text>
                   </template>
                   <template #description>
-                    <a-typography-text strong :heading="2" >{{ item.mp_name || '未知公众号' }}</a-typography-text>
+                    <a-typography-text strong :heading="2" @click="viewArticle(item)">{{ item.mp_name || '未知公众号' }}</a-typography-text>
                     <a-typography-text type="secondary"> {{ item.description }}</a-typography-text>
                     <a-typography-text type="secondary" strong> {{ formatDateTime(item.created_at) }}</a-typography-text>
                   </template>
@@ -82,13 +82,18 @@
 
   <a-drawer id="article-modal"
     v-model:visible="articleModalVisible" 
-    :title="currentArticle.title"
+    title="WeRss"
     placement="left"
     width="100vw"
     :footer="false"
     :fullscreen="false"
   >
-    <div style="padding: 20px; overflow-y: auto">
+    <div style="padding: 20px; overflow-y: auto;clear:both;">
+      <div><h2>{{currentArticle.title}}</h2></div>
+       <div style="margin-top: 20px; color: var(--color-text-3); text-align: left">
+       <a-link :href="currentArticle.url" target="_blank">查看原文</a-link>
+       更新时间 ：{{ currentArticle.time }}
+      </div>
       <div v-html="currentArticle.content"></div>
       <div style="margin-top: 20px; color: var(--color-text-3); text-align: right">
         {{ currentArticle.time }}
@@ -191,8 +196,7 @@ const handleSearch = () => {
   fetchArticles()
 }
  const processedContent = (record: any) => {
-let source_tpl=`<a href="${record.url}" target="_blank">查看原文</a>`
- return source_tpl+record.content.replace(
+ return record.content.replace(
       /(<img[^>]*src=["'])(?!\/static\/res\/logo\/)([^"']*)/g,
       '$1/static/res/logo/$2'
  ).replace(/<img([^>]*)width=["'][^"']*["']([^>]*)>/g, '<img$1$2>')
@@ -349,7 +353,9 @@ a-button {
 .load-more-btn {
   margin: 16px 0;
 }
-
+.arco-typography{
+  margin-right: 16px;
+}
 .total-count {
   color: var(--color-text-3);
   font-size: 14px;
@@ -361,6 +367,6 @@ a-button {
 </style>
 <style>
 #article-modal img{
-  max-width:80vw;
+   max-width:100%;
 }
 </style>

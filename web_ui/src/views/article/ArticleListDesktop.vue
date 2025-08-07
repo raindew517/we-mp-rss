@@ -126,21 +126,21 @@
             </template>
           </a-table>
 
-          <a-drawer 
+          <a-modal id="article-model"
             v-model:visible="articleModalVisible" 
             :title="currentArticle.title"
             placement="left"
-            width="70vw"
             :footer="false"
             :fullscreen="false"
+            @open="resetScrollPosition"
           >
-            <div style="padding: 20px;  overflow-y: auto">
+            <div style="padding: 20px;  overflow-y: auto;clear:both;">
               <div v-html="currentArticle.content"></div>
               <div style="margin-top: 20px; color: var(--color-text-3); text-align: right">
                 {{ currentArticle.time }}
               </div>
             </div>
-          </a-drawer>
+          </a-modal>
         </a-card>
       </a-layout-content>
     </a-layout>
@@ -152,7 +152,6 @@ import { Avatar } from '@/utils/constants'
 import { ref, onMounted, h } from 'vue'
 import axios from 'axios'
 import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode} from '@arco-design/web-vue/es/icon'
-import ResponsiveTable from '@/components/ResponsiveTable.vue'
 import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle,ClearDuplicateArticle,getArticleDetail } from '@/api/article'
 import { ExportOPML,ExportMPS,ImportMPS } from '@/api/export'
 import { getSubscriptions, UpdateMps} from '@/api/subscription'
@@ -393,6 +392,13 @@ const openRssFeed = () => {
   const activeMp = mpList.value.find(item => item.id === activeMpId.value)
   if (activeMp) {
     window.open(`/feed${search}/${activeMpId.value}.${format}`, '_blank')
+  }
+}
+
+const resetScrollPosition = () => {
+  const modalContent = document.querySelector('#article-model .arco-modal-body');
+  if (modalContent) {
+    modalContent.scrollTop = 0;
   }
 }
 
@@ -673,5 +679,10 @@ const exportArticles = () => {
 
 .arco-drawer-body {
   z-index: 9999 !important; /* 确保抽屉在其他内容之上 */
+}
+</style>
+<style>
+#article-model img{
+  max-width:100%;
 }
 </style>

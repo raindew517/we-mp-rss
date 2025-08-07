@@ -1,10 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { listMessageTasks, deleteMessageTask,FreshJobApi,FreshJobByIdApi,RunMessageTask } from '@/api/messageTask'
 import type { MessageTask } from '@/types/messageTask'
 import { useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
+import ResponsiveTable from '@/components/ResponsiveTable.vue'
 
+const isMobile = ref(window.innerWidth < 768)
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 const parseCronExpression = (exp: string) => {
   const parts = exp.split(' ')
   if (parts.length !== 5) return exp
@@ -163,7 +176,7 @@ onMounted(() => {
         注意：只有添加了任务消息才会定时执行更新任务，点击应用按钮后任务才会生效
       </a-alert>
 
-      <a-table
+      <a-table v-if="!isMobile"
         :data="taskList"
         :pagination="pagination"
         @page-change="handlePageChange"
@@ -207,6 +220,34 @@ onMounted(() => {
           </a-table-column>
         </template>
       </a-table>
+      <a-list v-else :data="taskList" :bordered="false">
+        <template #item="{ item }">
+          <a-list-item>
+            <a-list-item-meta>
+              <template #title>
+                {{ item.name }}
+              </template>
+              <template #description>
+                <div>{{ parseCronExpression(item.cron_exp) }}</div>
+                <div>
+                  <a-tag :color="item.message_type === 1 ? 'green' : 'red'">
+                    {{ item.message_type === 1 ? 'WeekHook' : 'Message' }}
+                  </a-tag>
+                  <a-tag :color="item.status === 1 ? 'green' : 'red'">
+                    {{ item.status === 1 ? '启用' : '禁用' }}
+                  </a-tag>
+                </div>
+              </template>
+            </a-list-item-meta>
+            <a-space>
+              <a-button size="mini" type="primary" @click="handleEdit(item.id)">编辑</a-button>
+              <a-button size="mini" type="dashed" @click="runTask(item.id,true)">测试</a-button>
+              <a-button size="mini" type="dashed" @click="runTask(item.id)">执行</a-button>
+              <a-button size="mini" status="danger" @click="handleDelete(item.id)">删除</a-button>
+            </a-space>
+          </a-list-item>
+        </template>
+      </a-list>
     </div>
   </a-spin>
 </template>
@@ -234,5 +275,45 @@ onMounted(() => {
 h2 {
   margin: 0;
   color: var(--color-text-1);
+}
+
+
+/* 移动端列表样式 */
+.a-list {
+  margin-top: 16px;
+}
+
+.a-list-item {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background-color: var(--color-bg-2);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.a-list-item:hover {
+  background-color: var(--color-bg-3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.a-list-item-meta-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.a-list-item-meta-description {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.a-list-item-meta-description .arco-tag {
+  margin-right: 8px;
+}
+
+.a-list-item-extra {
+  display: flex;
+  gap: 8px;
 }
 </style>
