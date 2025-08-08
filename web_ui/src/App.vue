@@ -10,6 +10,19 @@
             <icon-scan  @click="showAuthQrcode()"  style="margin-left: 10px; cursor: pointer;color: #000;" />
           </a-tooltip>
         </div>
+         <a-tooltip  v-if="hasLogined" content="Switch Language" position="bottom">
+          <a-dropdown  trigger="click" position="br">
+            <icon-translate size="24" style="cursor: pointer;"/>
+          <template #content>
+            <a-doption :selected="currentLanguage === 'english'" @click="() => handleLanguageChange('english')">
+              英文
+            </a-doption>
+            <a-doption :selected="currentLanguage === 'chinese_simplified'" @click="() => handleLanguageChange('chinese_simplified')">
+              中文
+            </a-doption>
+          </template>
+        </a-dropdown>
+      </a-tooltip>
       </div>
       <div class="header-right" v-if="hasLogined">
         <a-link href="/api/docs" target="_blank" style="margin-right: 20px;">Docs</a-link>
@@ -26,7 +39,8 @@
         </a-tooltip>
         <a-link href="https://www.paypal.com/ncp/payment/PUA72WYLAV5KW" target="_blank" style="margin-right: 20px;">赞助</a-link>
         
-      
+     
+
         <a-dropdown position="br" trigger="click">
           <div class="user-info">
             <a-avatar :size="36">
@@ -77,8 +91,17 @@
 </template>
 
 <script setup lang="ts">
+import translate from 'i18n-jsautotranslate'
 import { ref, computed, onMounted, watch, provide } from 'vue'
 import { Modal } from '@arco-design/web-vue/es/modal'
+
+const currentLanguage = ref(localStorage.getItem('language') || 'chinese_simplified');
+
+const handleLanguageChange = (language: string) => {
+  translate.changeLanguage(language);
+  localStorage.setItem('language', language);
+  currentLanguage.value = language;
+};
 
 const sponsorVisible = ref(false)
 const showSponsorModal = (e: Event) => {
@@ -152,7 +175,16 @@ onMounted(() => {
     fetchUserInfo()
   }
 })
-
+  // 根据本地存储的语言设置自动切换语言
+onMounted(() => {
+    const savedLanguage = localStorage.getItem('language')||"english";
+    if (savedLanguage) {
+      setTimeout(() => {
+        translate.changeLanguage(savedLanguage);
+      }, 1000); // 延时1000毫秒后执行语言切换
+      currentLanguage.value = savedLanguage;
+    }
+});
 watch(
   () => route.path,
   () => {

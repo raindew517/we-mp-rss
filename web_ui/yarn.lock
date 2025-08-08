@@ -583,6 +583,11 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
+i18n-jsautotranslate@^3.17.0:
+  version "3.17.0"
+  resolved "https://registry.npmmirror.com/i18n-jsautotranslate/-/i18n-jsautotranslate-3.17.0.tgz#847eab53698b4095f0bc7b4c3463a5099746e13d"
+  integrity sha512-tQs9297mOCuE/QCdTuNVNEFjaSORtWyHCoYz5BfM9Jr9bIq4DXoBQ+itPe7LxzeeTv6//fsvyYAx1kAFWT9P+w==
+
 is-arrayish@^0.3.1:
   version "0.3.2"
   resolved "https://registry.npmmirror.com/is-arrayish/-/is-arrayish-0.3.2.tgz"

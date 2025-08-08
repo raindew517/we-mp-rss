@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="language" content="zh-CN"/>
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/svg+xml" href="/static/logo.svg" />
@@ -13,9 +15,17 @@
   <meta name="author" content="Rachel" />
   <script src="https://hm.baidu.com/hm.js?975de8724ac02eb7e6d2357bb95c067d"></script>
   <title>WeRss微信公众号订阅助手</title>
+<!-- 引入多语言切换的js -->
+<script src="https://cdn.staticfile.net/translate.js/3.17.0/translate.js"></script>
 </head>
 
 <body>
+  <!-- 增加某种语言切换的按钮。注意 ul上加了一个 class="ignore" 代表这块代码不会被翻译到 -->
+<!-- <ul class="ignore">
+	<li onclick="translate.changeLanguage('english');">English</li>|
+	<li onclick="translate.changeLanguage('chinese_simplified');">简体中文</li>|
+	<li onclick="translate.changeLanguage('chinese_traditional');">繁體中文</li>
+</ul> -->
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
