@@ -166,13 +166,11 @@ async def get_mp(
                 message="获取公众号详情失败"
             )
         )
-@router.get("/by_article/{mp_id}", summary="通过文章链接获取公众号详情")
-
+@router.post("/by_article", summary="通过文章链接获取公众号详情")
 async def get_mp_by_article(
-    url: str,
-    # current_user: dict = Depends(get_current_user)
+    url: str=Query(..., min_length=1),
+    current_user: dict = Depends(get_current_user)
 ):
-    session = DB.get_session()
     try:
         from driver.wxarticle import Web
         info=Web.get_article_content(url)

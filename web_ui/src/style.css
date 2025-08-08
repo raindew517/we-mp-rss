@@ -76,6 +76,11 @@ a:hover {
     max-width: 540px;
   }
 }
+@media screen and (max-width:768px) {
+ .arco-modal{
+  width:80% !important;
+ }
+}
 @media (min-width: 768px) {
   .container {
     max-width: 720px;

@@ -147,7 +147,7 @@
             placement="left"
             :footer="false"
             :fullscreen="false"
-            @open="resetScrollPosition"
+            @before-close="resetScrollPosition"
           >
             <div style="padding: 20px;  overflow-y: auto;clear:both;">
               <div v-html="currentArticle.content"></div>
@@ -411,10 +411,10 @@ const openRssFeed = () => {
 }
 
 const resetScrollPosition = () => {
-  const modalContent = document.querySelector('#article-model .arco-modal-body');
-  if (modalContent) {
-    modalContent.scrollTop = 0;
-  }
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
 }
 
 const fullLoading = ref(false)

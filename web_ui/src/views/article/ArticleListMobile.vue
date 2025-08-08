@@ -90,9 +90,9 @@
   >
     <div style="padding: 20px; overflow-y: auto;clear:both;">
       <div><h2>{{currentArticle.title}}</h2></div>
-        <div style="margin-top: 20px; color: var(--color-text-3); text-align: left;position:fixed;left:40%;top:-3px;width:100%;">
-        <a-link :href="currentArticle.url" target="_blank">上一篇 </a-link>
-        <a-link :href="currentArticle.url" target="_blank">下一篇 </a-link>
+        <div style="margin-top: 20px; color: var(--color-text-3); text-align: left;position:fixed;left:40%;top:-3px;">
+        <a-link @click="viewArticle(currentArticle,-1)" target="_blank">上一篇 </a-link>
+        <a-link @click="viewArticle(currentArticle,1)" target="_blank">下一篇 </a-link>
        </div>
        <div style="margin-top: 20px; color: var(--color-text-3); text-align: left">
        <a-link :href="currentArticle.url" target="_blank">查看原文</a-link>
@@ -110,7 +110,7 @@
 import { formatDateTime,formatTimestamp } from '@/utils/date'
 import { Avatar } from '@/utils/constants'
 import { ref, onMounted } from 'vue'
-import { getArticles, getArticleDetail } from '@/api/article'
+import { getArticles, getArticleDetail,getPrevArticle,getNextArticle} from '@/api/article'
 import { getSubscriptions } from '@/api/subscription'
 import { Message } from '@arco-design/web-vue'
 
@@ -205,11 +205,13 @@ const handleSearch = () => {
       '$1/static/res/logo/$2'
  ).replace(/<img([^>]*)width=["'][^"']*["']([^>]*)>/g, '<img$1$2>')
  }
-const viewArticle = async (record: any) => {
+const viewArticle = async (record: any,action_type: number) => {
   loading.value = true
   try {
-    const article = await getArticleDetail(record.id)
+    // console.log(record)
+    const article = await getArticleDetail(record.id,action_type)
     currentArticle.value = {
+      id: article.id,
       title: article.title,
       content: processedContent(article),
       time: formatDateTime(article.created_at),
@@ -225,6 +227,7 @@ const viewArticle = async (record: any) => {
 }
 
 const currentArticle = ref({
+  id: '',
   title: '',
   content: '',
   time: '',

@@ -35,11 +35,12 @@
         </template>
         系统信息
       </a-menu-item>
-       <a-menu-item key="/reader">
+       <!-- <a-menu-item key="/reader">
         <template #icon>
           <icon-read />
+            阅读器
         </template>
-      </a-menu-item>
+      </a-menu-item> -->
     </a-menu>
   </a-layout-header>
 </template>

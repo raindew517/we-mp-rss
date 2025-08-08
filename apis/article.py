@@ -179,7 +179,7 @@ async def delete_article(
         article = session.query(Article).filter(Article.id == article_id).first()
         if not article:
             raise HTTPException(
-                status_code=fast_status.HTTP_404_NOT_FOUND,
+                status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
                 detail=error_response(
                     code=40401,
                     message="文章不存在"
@@ -230,7 +230,7 @@ async def get_next_article(
         
         if not next_article:
             raise HTTPException(
-                status_code=fast_status.HTTP_404_NOT_FOUND,
+                status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
                 detail=error_response(
                     code=40402,
                     message="没有下一篇文章"
@@ -277,7 +277,7 @@ async def get_prev_article(
         
         if not prev_article:
             raise HTTPException(
-                status_code=fast_status.HTTP_404_NOT_FOUND,
+                status_code=fast_status.HTTP_406_NOT_ACCEPTABLE,
                 detail=error_response(
                     code=40403,
                     message="没有上一篇文章"
