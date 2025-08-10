@@ -35,9 +35,9 @@ async def get_base_info() -> Dict[str, Any]:
         )    
     
 
- 
+from core.resource import get_system_resources
 @router.get("/resources", summary="获取系统资源使用情况")
-async def get_system_resources(
+async def system_resources(
     current_user: dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """获取系统资源使用情况
@@ -49,7 +49,6 @@ async def get_system_resources(
         - disk: 磁盘使用情况
     """
     try:
-        from core.resource import get_system_resources
         resources_info=get_system_resources()
         return success_response(data=resources_info)
     except Exception as e:
@@ -57,7 +56,9 @@ async def get_system_resources(
             code=50002,
             message=f"获取系统资源失败: {str(e)}"
         )
-
+from core.article_lax import ARTICLE_INFO,laxArticle
+from .ver import API_VERSION
+from core.ver import VERSION as CORE_VERSION,LATEST_VERSION
 @router.get("/info", summary="获取系统信息")
 async def get_system_info(
     current_user: dict = Depends(get_current_user)
@@ -72,9 +73,7 @@ async def get_system_info(
         - system: 系统详细信息
     """
     try:
-        from core.article_lax import ARTICLE_INFO,laxArticle
-        from .ver import API_VERSION
-        from core.ver import VERSION as CORE_VERSION,LATEST_VERSION
+      
 
         # 获取系统信息
         system_info = {
@@ -100,7 +99,7 @@ async def get_system_info(
                 "info":WX_LOGIN_INFO,
                 "login":WX_LOGIN_ED,
             },
-            "article":laxArticle(),
+            "article":ARTICLE_INFO,
             'queue':TaskQueue.get_queue_info(),
         }
         return success_response(data=system_info)
