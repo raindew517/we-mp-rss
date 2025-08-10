@@ -188,7 +188,9 @@ class Db:
             return self.Session()
         # 检查数据库连接是否已断开
         try:
-            session.execute("SELECT 1")
+            from core.models import User
+            # 尝试执行一个简单的查询来检查连接状态
+            session.query(User.id).count()
         except Exception as e:
             from core.print import print_warning
             print_warning(f"[{self.tag}] Database connection lost: {e}. Reconnecting...")
