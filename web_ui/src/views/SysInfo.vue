@@ -139,7 +139,7 @@ const openUpdateLink = () => {
 };
 
 onMounted(async () => {
-  sysInfo.value = await getSysInfo();
+  sysInfo.value = await getSysInfo()
 });
 </script>
 

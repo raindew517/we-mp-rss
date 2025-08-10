@@ -204,7 +204,7 @@ class WxGather:
             WX_LOGIN_ED=False
             send_wx_code(f"公众号平台登录失效,请重新登录")
             pass
-        raise Exception(error)
+        # raise Exception(error)
 
     def Over(self,CallBack=None):
         if getattr(self, 'articles', None) is not None:

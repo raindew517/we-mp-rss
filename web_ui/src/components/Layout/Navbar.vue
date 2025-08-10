@@ -49,12 +49,15 @@
 import { ref, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import TextIcon from '@/components/TextIcon.vue'
+import { translatePage, setCurrentLanguage } from '@/utils/translate';
+
 const router = useRouter()
 const route = useRoute()
 const selectedKeys = ref<string[]>(['/'])
 
 watchEffect(() => {
   selectedKeys.value = [route.path]
+  // translatePage()
 })
 
 const handleMenuClick = (key: string) => {

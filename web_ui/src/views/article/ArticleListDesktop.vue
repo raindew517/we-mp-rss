@@ -2,9 +2,9 @@
   <a-spin :loading="fullLoading" tip="正在刷新..." size="large">
     <a-layout class="article-list">
       <a-layout-sider :width="300"
-        :style="{ background: '#fff', padding: '0', borderRight: '1px solid #eee', display: 'flex', flexDirection: 'column' ,border:0}">
-        <a-card :bordered="false" title="公众号" 
-          :headStyle="{ padding: '12px 16px', borderBottom: '1px solid #eee', background: '#fff', zIndex: 1 ,border:0}">
+        :style="{ background: '#fff', padding: '0', borderRight: '1px solid #eee', display: 'flex', flexDirection: 'column', border: 0 }">
+        <a-card :bordered="false" title="公众号"
+          :headStyle="{ padding: '12px 16px', borderBottom: '1px solid #eee', background: '#fff', zIndex: 1, border: 0 }">
           <template #extra>
             <a-dropdown>
               <a-button type="primary">
@@ -21,34 +21,34 @@
             </a-dropdown>
           </template>
           <div style="display: flex; flex-direction: column;; background: #fff">
-              <a-list :data="mpList" :loading="mpLoading" bordered>
-                <template #item="{ item, index }">
-                  <a-list-item @click="handleMpClick(item.id)" :class="{ 'active-mp': activeMpId === item.id }"
-                    style="padding: 9px 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
-                   <div style="display: flex; align-items: center;">
-                     <img :src="Avatar(item.avatar)" width="40" style="float:left;margin-right:1rem;"/>
-                     <a-typography-text  strong style="line-height:32px;">
-                       {{ item.name || item.mp_name }}
-                     </a-typography-text>
-                     <a-button v-if="activeMpId === item.id && item.id!=''" size="mini" type="text" status="danger" @click="$event.stopPropagation(); deleteMp(item.id)" >
-                       <template #icon><icon-delete /></template>
-                      </a-button>
-                    </div>
-                  </a-list-item>
-                </template>
-              </a-list>
-              <a-pagination :total="mpPagination.total" simple  @change="handleMpPageChange" :show-total="true" style="margin-top: 1rem;"/>
+            <a-list :data="mpList" :loading="mpLoading" bordered>
+              <template #item="{ item, index }">
+                <a-list-item @click="handleMpClick(item.id)" :class="{ 'active-mp': activeMpId === item.id }"
+                  style="padding: 9px 8px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                  <div style="display: flex; align-items: center;">
+                    <img :src="Avatar(item.avatar)" width="40" style="float:left;margin-right:1rem;" />
+                    <a-typography-text strong style="line-height:32px;">
+                      {{ item.name || item.mp_name }}
+                    </a-typography-text>
+                    <a-button v-if="activeMpId === item.id && item.id != ''" size="mini" type="text" status="danger"
+                      @click="$event.stopPropagation(); deleteMp(item.id)">
+                      <template #icon><icon-delete /></template>
+                    </a-button>
+                  </div>
+                </a-list-item>
+              </template>
+            </a-list>
+            <a-pagination :total="mpPagination.total" simple @change="handleMpPageChange" :show-total="true"
+              style="margin-top: 1rem;" />
           </div>
         </a-card>
       </a-layout-sider>
 
-      <a-layout-content :style="{ padding: '20px', width: '100%'}" >
-        <a-page-header 
-        :title="activeFeed ? activeFeed.name : '全部'" 
-        :subtitle="'管理您的公众号订阅内容'" :show-back="false">
-            <template #extra>
+      <a-layout-content :style="{ padding: '20px', width: '100%' }">
+        <a-page-header :title="activeFeed ? activeFeed.name : '全部'" :subtitle="'管理您的公众号订阅内容'" :show-back="false">
+          <template #extra>
             <a-space>
-              <a-button @click="refresh" v-if="activeFeed?.id!=''">
+              <a-button @click="refresh" v-if="activeFeed?.id != ''">
                 <template #icon><icon-refresh /></template>
                 刷新
               </a-button>
@@ -56,7 +56,7 @@
                 <template #icon><icon-delete /></template>
                 清理无效文章
               </a-button>
-              <a-button @click="clear_duplicate_article" v-if="activeFeed?.id==''">
+              <a-button @click="clear_duplicate_article" v-if="activeFeed?.id == ''">
                 <template #icon><icon-delete /></template>
                 清理重复文章
               </a-button>
@@ -66,16 +66,28 @@
               </a-button>
               <a-dropdown>
                 <a-button>
-                  <template #icon><IconWifi /></template>
+                  <template #icon>
+                    <IconWifi />
+                  </template>
                   订阅
                   <icon-down />
                 </a-button>
                 <template #content>
-                  <a-doption @click="rssFormat='atom'; openRssFeed()"><template #icon><TextIcon text="atom" /></template>ATOM</a-doption>
-                  <a-doption @click="rssFormat='rss'; openRssFeed()"><template #icon><TextIcon text="rss" /></template>RSS</a-doption>
-                  <a-doption @click="rssFormat='json'; openRssFeed()"><template #icon><TextIcon text="json" /></template>JSON</a-doption>
-                  <a-doption @click="rssFormat='md'; openRssFeed()"><template #icon><TextIcon text="md" /></template>Markdown</a-doption>
-                  <a-doption @click="rssFormat='txt'; openRssFeed()"><template #icon><TextIcon text="txt" /></template>Text</a-doption>
+                  <a-doption @click="rssFormat = 'atom'; openRssFeed()"><template #icon>
+                      <TextIcon text="atom" />
+                    </template>ATOM</a-doption>
+                  <a-doption @click="rssFormat = 'rss'; openRssFeed()"><template #icon>
+                      <TextIcon text="rss" />
+                    </template>RSS</a-doption>
+                  <a-doption @click="rssFormat = 'json'; openRssFeed()"><template #icon>
+                      <TextIcon text="json" />
+                    </template>JSON</a-doption>
+                  <a-doption @click="rssFormat = 'md'; openRssFeed()"><template #icon>
+                      <TextIcon text="md" />
+                    </template>Markdown</a-doption>
+                  <a-doption @click="rssFormat = 'txt'; openRssFeed()"><template #icon>
+                      <TextIcon text="txt" />
+                    </template>Text</a-doption>
                 </template>
               </a-dropdown>
               <a-button type="primary" status="danger" @click="handleBatchDelete" :disabled="!selectedRowKeys.length">
@@ -87,28 +99,20 @@
         </a-page-header>
 
         <a-card style="border:0">
-          <a-alert type="success" closable>{{activeFeed?.mp_intro||"请选择一个公众号码进行管理,搜索文章后再点击订阅会有惊喜哟！！！"}}</a-alert>
+          <a-alert type="success" closable>{{ activeFeed?.mp_intro || "请选择一个公众号码进行管理,搜索文章后再点击订阅会有惊喜哟！！！" }}</a-alert>
           <div class="search-bar">
-            <a-input-search v-model="searchText" placeholder="搜索文章标题" @search="handleSearch" @keyup.enter="handleSearch" allow-clear />
+            <a-input-search v-model="searchText" placeholder="搜索文章标题" @search="handleSearch" @keyup.enter="handleSearch"
+              allow-clear />
           </div>
 
-          <a-table 
-            :columns="columns" 
-            :data="articles" 
-            :loading="loading" 
-            :pagination="pagination" 
-            :row-selection="{
-              type: 'checkbox',
-              showCheckedAll: true,
-              width: 50,
-              fixed: true,
-              checkStrictly: true,
-              onlyCurrent: false
-            }"
-            row-key="id"
-            @page-change="handlePageChange"
-            v-model:selectedKeys="selectedRowKeys"
-          >
+          <a-table :columns="columns" :data="articles" :loading="loading" :pagination="pagination" :row-selection="{
+            type: 'checkbox',
+            showCheckedAll: true,
+            width: 50,
+            fixed: true,
+            checkStrictly: true,
+            onlyCurrent: false
+          }" row-key="id" @page-change="handlePageChange" v-model:selectedKeys="selectedRowKeys">
             <template #status="{ record }">
               <a-tag :color="statusColorMap[record.status]">
                 {{ statusTextMap[record.status] }}
@@ -126,7 +130,7 @@
             </template>
           </a-table>
 
-         
+
           <a-modal v-model:visible="refreshModalVisible" title="刷新设置">
             <a-form :model="refreshForm" :rules="refreshRules">
               <a-form-item label="起始页" field="startPage">
@@ -141,19 +145,20 @@
               <a-button type="primary" @click="handleRefresh">确定</a-button>
             </template>
           </a-modal>
-           <a-modal id="article-model"
-            v-model:visible="articleModalVisible" 
-            :title="currentArticle.title"
-            placement="left"
-            :footer="false"
-            :fullscreen="false"
-            @before-close="resetScrollPosition"
-          >
-            <div style="padding: 20px;  overflow-y: auto;clear:both;">
-              <div v-html="currentArticle.content"></div>
-              <div style="margin-top: 20px; color: var(--color-text-3); text-align: right">
-                {{ currentArticle.time }}
-              </div>
+          <a-modal id="article-model" v-model:visible="articleModalVisible" 
+            placement="left" :footer="false" :fullscreen="false" @before-close="resetScrollPosition">
+            <h2 id="topreader">{{ currentArticle.title }}</h2>
+            <div style="margin-top: 20px; color: var(--color-text-3); text-align: left">
+              <a-link :href="currentArticle.url" target="_blank">查看原文</a-link>
+              更新时间 ：{{ currentArticle.time }}
+            <a-link @click="viewArticle(currentArticle,-1)" target="_blank">上一篇 </a-link>
+            <a-space/>
+            <a-link @click="viewArticle(currentArticle,1)" target="_blank">下一篇 </a-link>
+            </div>
+            <div v-html="currentArticle.content"></div>
+
+            <div style="margin-top: 20px; color: var(--color-text-3); text-align: right">
+              {{ currentArticle.time }}
             </div>
           </a-modal>
         </a-card>
@@ -164,17 +169,18 @@
 
 <script setup lang="ts">
 import { Avatar } from '@/utils/constants'
+import { translatePage, setCurrentLanguage } from '@/utils/translate';
 import { ref, onMounted, h } from 'vue'
 import axios from 'axios'
-import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode} from '@arco-design/web-vue/es/icon'
-import { getArticles,deleteArticle as deleteArticleApi ,ClearArticle,ClearDuplicateArticle,getArticleDetail } from '@/api/article'
-import { ExportOPML,ExportMPS,ImportMPS } from '@/api/export'
-import { getSubscriptions, UpdateMps} from '@/api/subscription'
+import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode } from '@arco-design/web-vue/es/icon'
+import { getArticles, deleteArticle as deleteArticleApi, ClearArticle, ClearDuplicateArticle, getArticleDetail } from '@/api/article'
+import { ExportOPML, ExportMPS, ImportMPS } from '@/api/export'
+import { getSubscriptions, UpdateMps } from '@/api/subscription'
 import { inject } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
-import { formatDateTime,formatTimestamp } from '@/utils/date'
+import { formatDateTime, formatTimestamp } from '@/utils/date'
 import router from '@/router'
-import {  deleteMpApi } from '@/api/subscription'
+import { deleteMpApi } from '@/api/subscription'
 import TextIcon from '@/components/TextIcon.vue'
 
 const articles = ref([])
@@ -221,7 +227,7 @@ const columns = [
   {
     title: '文章标题',
     dataIndex: 'title',
-    width: window.innerWidth -1000,
+    width: window.innerWidth - 1000,
     ellipsis: true,
     render: ({ record }) => h('a', {
       href: record.url || '#',
@@ -239,7 +245,7 @@ const columns = [
       const mp = mpList.value.find(item => item.id === record.mp_id);
       return h('span', {
         style: { color: 'var(--color-text-3)' }
-      }, record.mp_name||mp?.name || record.mp_id)
+      }, record.mp_name || mp?.name || record.mp_id)
     }
   },
   {
@@ -273,14 +279,14 @@ const handleMpPageChange = (page: number, pageSize: number) => {
   fetchMpList()
 }
 const rssFormat = ref('atom')
-const activeFeed=ref({
-  id:"",
-  name:"全部",
+const activeFeed = ref({
+  id: "",
+  name: "全部",
 })
 const handleMpClick = (mpId: string) => {
   activeMpId.value = mpId
   pagination.value.current = 1
-  activeFeed.value=mpList.value.find(item => item.id === activeMpId.value)
+  activeFeed.value = mpList.value.find(item => item.id === activeMpId.value)
   console.log(activeFeed.value)
 
   fetchArticles()
@@ -310,7 +316,7 @@ const fetchArticles = async () => {
       ...item,
       mp_name: item.mp_name || item.account_name || '未知公众号',
       publish_time: item.publish_time || item.create_time || '-',
-      url: item.url||"https://mp.weixin.qq.com/s/" + item.id
+      url: item.url || "https://mp.weixin.qq.com/s/" + item.id
     }))
     pagination.value.total = res.total || 0
   } catch (error) {
@@ -322,7 +328,7 @@ const fetchArticles = async () => {
 }
 
 const handlePageChange = (page: number, pageSize: number, type?: string) => {
-  console.log('分页事件触发:', {page, pageSize, type})
+  console.log('分页事件触发:', { page, pageSize, type })
   pagination.value.current = page
   pagination.value.pageSize = pageSize
   fetchArticles()
@@ -334,10 +340,10 @@ const handleSearch = () => {
 }
 
 const wechatAuthQrcodeRef = ref()
-  const showAuthQrcode = inject('showAuthQrcode') as () => void
-  const handleAuthClick = () => {
-    showAuthQrcode()
-  }
+const showAuthQrcode = inject('showAuthQrcode') as () => void
+const handleAuthClick = () => {
+  showAuthQrcode()
+}
 
 const exportOPML = async () => {
   try {
@@ -393,12 +399,12 @@ const importMPS = async () => {
 };
 
 const openRssFeed = () => {
-  const format = ['rss', 'atom', 'json','md','txt'].includes(rssFormat.value) 
-    ? rssFormat.value 
+  const format = ['rss', 'atom', 'json', 'md', 'txt'].includes(rssFormat.value)
+    ? rssFormat.value
     : 'atom'
-  let search=""
-  if(searchText.value!=""){
-    search="/search/"+searchText.value;
+  let search = ""
+  if (searchText.value != "") {
+    search = "/search/" + searchText.value;
   }
   if (!activeMpId.value) {
     window.open(`/feed${search}/all.${format}`, '_blank')
@@ -411,10 +417,10 @@ const openRssFeed = () => {
 }
 
 const resetScrollPosition = () => {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
 }
 
 const fullLoading = ref(false)
@@ -436,8 +442,8 @@ const showRefreshModal = () => {
 const handleRefresh = () => {
   fullLoading.value = true
   UpdateMps(activeMpId.value, {
-  start_page: refreshForm.value.startPage,
-  end_page: refreshForm.value.endPage
+    start_page: refreshForm.value.startPage,
+    end_page: refreshForm.value.endPage
   }).then(() => {
     Message.success('刷新成功')
     refreshModalVisible.value = false
@@ -449,7 +455,7 @@ const handleRefresh = () => {
 const clear_articles = () => {
   fullLoading.value = true
   ClearArticle().then((res) => {
-    Message.success(res?.message||'清理成功')
+    Message.success(res?.message || '清理成功')
     refreshModalVisible.value = false
   }).finally(() => {
     fullLoading.value = false
@@ -459,7 +465,7 @@ const clear_articles = () => {
 const clear_duplicate_article = () => {
   fullLoading.value = true
   ClearDuplicateArticle().then((res) => {
-    Message.success(res?.message||'清理成功')
+    Message.success(res?.message || '清理成功')
     refreshModalVisible.value = false
   }).finally(() => {
     fullLoading.value = false
@@ -478,36 +484,33 @@ const showAddModal = () => {
 const handleAddSuccess = () => {
   fetchArticles()
 }
-
-const viewArticle = async (_record: any) => {
-  loading.value = true;
-  let record=await getArticleDetail(_record?.id)
-  let source_tpl=`<a href="${record.url}" target="_blank">查看原文</a>`
-  if (record.content) {
-    // 处理图片链接，在所有图片链接前加上/static/res/logo/
-    const processedContent = source_tpl+record.content.replace(
+ const processedContent = (record: any) => {
+ return record.content.replace(
       /(<img[^>]*src=["'])(?!\/static\/res\/logo\/)([^"']*)/g,
       '$1/static/res/logo/$2'
-    )
+ ).replace(/<img([^>]*)width=["'][^"']*["']([^>]*)>/g, '<img$1$2>')
+ }
+const viewArticle = async (record: any,action_type: number) => {
+  loading.value = true
+  try {
+    // console.log(record)
+    const article = await getArticleDetail(record.id,action_type)
     currentArticle.value = {
-      title: record.title,
-      content: processedContent,
-      time: formatDateTime(record.created_at),
-      url: record.url
+      id: article.id,
+      title: article.title,
+      content: processedContent(article),
+      time: formatDateTime(article.created_at),
+      url: article.url
     }
     articleModalVisible.value = true
-  } else {
-    currentArticle.value = {
-      title: record.title,
-      content: source_tpl,
-      time: formatDateTime(record.created_at),
-      url: record.url
-    }
-    articleModalVisible.value = true
+    window.location="#topreader"
+  } catch (error) {
+    console.error('获取文章详情错误:', error)
+    Message.error(error)
+  } finally {
+    loading.value = false
   }
-  loading.value = false;
 }
-
 const currentArticle = ref({
   title: '',
   content: '',
@@ -572,7 +575,7 @@ const fetchMpList = async () => {
       page: mpPagination.value.current - 1,
       pageSize: mpPagination.value.pageSize
     })
-    
+
     mpList.value = res.list.map(item => ({
       id: item.id || item.mp_id,
       name: item.name || item.mp_name,
@@ -671,7 +674,7 @@ const exportArticles = () => {
   cursor: pointer;
   padding: 12px 16px;
   transition: all 0.2s;
-  margin-bottom:0 !important;
+  margin-bottom: 0 !important;
 }
 
 .a-list-item:hover {
@@ -686,18 +689,20 @@ const exportArticles = () => {
   display: flex;
   margin-bottom: 20px;
 }
-.arco-drawer-body img{
+
+.arco-drawer-body img {
   max-width: 100vw !important;
   margin: 0 auto !important;
-  padding:0 !important;
+  padding: 0 !important;
 }
 
 .arco-drawer-body {
-  z-index: 9999 !important; /* 确保抽屉在其他内容之上 */
+  z-index: 9999 !important;
+  /* 确保抽屉在其他内容之上 */
 }
 </style>
 <style>
-#article-model img{
-  max-width:100%;
+#article-model img {
+  max-width: 100%;
 }
 </style>

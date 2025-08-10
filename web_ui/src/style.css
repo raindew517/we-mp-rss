@@ -208,3 +208,19 @@ a:hover {
 .fade-in {
   animation: fadeIn 0.5s ease forwards;
 }
+
+
+#translate{
+    display: none !important;
+    position: fixed;
+    top: 105px;
+    right: 40px;
+    z-index: 1000;
+}
+@media screen and (max-width:768px) {
+#translate{
+    position: fixed;
+    top: 135px;
+    left: 44px;
+}
+}

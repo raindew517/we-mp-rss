@@ -7,7 +7,7 @@ server:
    #过期是否发送授权二维通知 默认True
    send_code: ${SEND_CODE:-True}
    #二维通知标题
-   code_title: ${CODE_TITLE:-WeRSS授权二维码}
+   code_title: ${CODE_TITLE:-WeRSS通知}
    #启动JOB定时任务，默认为True
    enable_job: ${ENABLE_JOB:-True}
    #代码修改自动重启服务，默认为False
