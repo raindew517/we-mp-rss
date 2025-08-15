@@ -8,7 +8,7 @@ from .success import Success
 from selenium.webdriver.common.action_chains import ActionChains
 import time
 import os
-from driver.success import WX_LOGIN_ED
+from driver.success import getStatus
 from driver.store import Store
 import re
 from threading import Timer
@@ -124,7 +124,7 @@ class Wx:
     def Token(self,CallBack=None):
         try:
             self.CallBack=CallBack
-            if WX_LOGIN_ED==False:
+            if getStatus()==False:
                 return
             if 'controller' not in locals():
                 controller = FirefoxController()

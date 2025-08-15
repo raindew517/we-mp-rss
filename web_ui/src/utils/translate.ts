@@ -1,4 +1,4 @@
-import translate from "i18n-jsautotranslate";
+import { trans as translate } from "./i18n/index.js";
 import { ref, watchEffect } from "vue";
 
 const Has_Change = () => {
@@ -16,7 +16,7 @@ export const hash = (str: string): string => {
   }
   return hash.toString();
 };
-const key = "c-Hasn-Body";
+const key = "c-Hash-Body";
 export const set_hash = (): void => {
   localStorage.setItem(key, hash(document.body.innerText));
 };

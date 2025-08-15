@@ -57,7 +57,7 @@
         </a-descriptions-item>
         <a-descriptions-item label="过期时间">
           <template #label> <api-outlined /> 过期时间 </template>
-          {{ sysInfo.wx.expiry_time }}
+          {{ !sysInfo.wx.login? '未登录': sysInfo.wx.expiry_time }}
         </a-descriptions-item>
         <a-descriptions-item label="API版本">
           <template #label> <api-outlined /> API版本 </template>

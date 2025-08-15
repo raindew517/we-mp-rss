@@ -9,7 +9,7 @@ from .base import success_response, error_response
 from driver.token import wx_cfg
 from core.config import cfg
 from jobs.mps import TaskQueue
-from driver.success import WX_LOGIN_ED,WX_LOGIN_INFO
+from driver.success import getLoginInfo,getStatus
 router = APIRouter(prefix="/sys", tags=["系统信息"])
 
 # 记录服务器启动时间
@@ -96,9 +96,9 @@ async def get_system_info(
             'need_update':CORE_VERSION != LATEST_VERSION,
             "wx":{
                 'token':wx_cfg.get('token',''),
-                'expiry_time':wx_cfg.get('expiry.expiry_time','') if WX_LOGIN_ED else "-",
-                "info":WX_LOGIN_INFO,
-                "login":WX_LOGIN_ED,
+                'expiry_time':wx_cfg.get('expiry.expiry_time','') if getStatus() else "",
+                "info":getLoginInfo(),
+                "login":getStatus(),
             },
             "article":ARTICLE_INFO,
             'queue':TaskQueue.get_queue_info(),

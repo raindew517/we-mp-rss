@@ -6,8 +6,9 @@
         <div class="logo">
           <img :src="logo" alt="avatar" :width="60" style="margin-right:1rem;">
           <router-link to="/">{{ appTitle }}</router-link>
-          <a-tooltip v-if="hasLogined" content="点我扫码授权" position="bottom">
-            <icon-scan @click="showAuthQrcode()" style="margin-left: 10px; cursor: pointer;color: #000;" />
+          <a-tooltip v-if="hasLogined" :content="!haswxLogined ? '未授权，请扫码登录' : '点我扫码授权'" position="bottom">
+
+            <icon-scan @click="showAuthQrcode()" :style="{ marginLeft: '10px', cursor: 'pointer', color: !haswxLogined ? '#f00' : '#000' }"/>
           </a-tooltip>
         </div>
         <a-space>
@@ -206,7 +207,7 @@
 import translate from 'i18n-jsautotranslate'
 import { ref,watchEffect, computed, onMounted, watch, provide } from 'vue'
 import { Modal } from '@arco-design/web-vue/es/modal'
-
+import {getSysInfo} from '@/api/sysinfo'
 const currentLanguage = ref(localStorage.getItem('language') || 'chinese_simplified');
 
 
@@ -241,6 +242,7 @@ const userInfo = ref({
   username: '',
   avatar: ''
 })
+const haswxLogined = ref(false)
 const hasLogined = ref(false)
 const isAuthenticated = computed(() => {
   hasLogined.value = !!localStorage.getItem('token')
@@ -253,6 +255,15 @@ const fetchUserInfo = async () => {
     userInfo.value = res
   } catch (error) {
     console.error('获取用户信息失败', error)
+  }
+}
+
+const fetchSysInfo = async () => {
+  try {
+    const res = await getSysInfo()
+    haswxLogined.value = res?.wx?.login||false
+  } catch (error) {
+    console.error('获取系统信息失败', error)
   }
 }
 
@@ -287,6 +298,7 @@ onMounted(() => {
     fetchUserInfo()
   }
   translatePage();
+  fetchSysInfo();
 })
 import { translatePage, setCurrentLanguage } from '@/utils/translate';
 
@@ -305,6 +317,7 @@ watch(
 .app-container {
   min-height: 100vh;
 }
+
 
 .app-header {
   display: flex;

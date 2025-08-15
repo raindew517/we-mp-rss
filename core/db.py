@@ -75,7 +75,22 @@ class Db:
         
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
-            
+    def delete_article(self,article_data:dict)->bool:
+        try:
+            art = Article(**article_data)
+            if art.id:
+               art.id=f"{str(art.mp_id)}-{art.id}".replace("MP_WXS_","")
+            session=DB.get_session()
+            article = session.query(Article).filter(Article.id == art.id).first()
+            if article is not None:
+                session.delete(article)
+                session.commit()
+                return True
+        except Exception as e:
+            print_error(f"delete article:{str(e)}")
+            pass      
+        return False
+     
     def add_article(self, article_data: dict) -> bool:
         try:
             session=self.get_session()

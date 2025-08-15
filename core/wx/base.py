@@ -7,7 +7,7 @@ from core.models.feed import Feed
 from .cfg import cfg,wx_cfg
 from core.print import print_error,print_info
 from core.rss import RSS
-from driver.success import WX_LOGIN_ED,WX_LOGIN_INFO
+from driver.success import setStatus
 import random
 # 定义一些常见的 User-Agent
 USER_AGENTS = [
@@ -108,7 +108,7 @@ class WxGather:
     def FillBack(self,CallBack=None,data=None,Ext_Data=None):
         if CallBack is not None:
             if data is not  None:
-                WX_LOGIN_ED=True
+                setStatus(True)
                 from core.models import Article
                 from datetime import datetime
                 art={
@@ -202,7 +202,7 @@ class WxGather:
         if code=="Invalid Session":
             from jobs.failauth import send_wx_code
             import threading
-            WX_LOGIN_ED=False
+            setStatus(False)
             from core.queue import TaskQueue
             TaskQueue.clear_queue()
             threading.Thread(target=send_wx_code,args=(f"公众号平台登录失效,请重新登录",)).start()
