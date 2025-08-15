@@ -1,10 +1,11 @@
 import http from './http'
 import type { MessageTask, MessageTaskUpdate } from '@/types/messageTask'
 
-export const listMessageTasks = (params?: { page?: number; pageSize?: number }) => {
+export const listMessageTasks = (params?: { offset?: number; limit?: number }) => {
+  console.log(params)
   const apiParams = {
-    offset: (params?.page || 0) * (params?.pageSize || 10),
-    limit: params?.pageSize || 10
+    offset: (params?.offset || 0) ,
+    limit: params?.limit || 10
   }
   return http.get<MessageTask>('/wx/message_tasks', { params: apiParams })
 }

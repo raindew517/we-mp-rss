@@ -201,9 +201,13 @@ class WxGather:
         self.Over()
         if code=="Invalid Session":
             from jobs.failauth import send_wx_code
+            import threading
             WX_LOGIN_ED=False
-            send_wx_code(f"公众号平台登录失效,请重新登录")
-            pass
+            from core.queue import TaskQueue
+            TaskQueue.clear_queue()
+            threading.Thread(target=send_wx_code,args=(f"公众号平台登录失效,请重新登录",)).start()
+            # send_wx_code(f"公众号平台登录失效,请重新登录")
+            raise Exception(error)
         # raise Exception(error)
 
     def Over(self,CallBack=None):
@@ -217,7 +221,7 @@ class WxGather:
                 pass
             rss.clear_cache(mp_id=mp_id)  
         if CallBack is not None:
-            CallBack(self)
+            CallBack(self.articles)
 
     def dateformat(self,timestamp:any):
         from datetime import datetime, timezone

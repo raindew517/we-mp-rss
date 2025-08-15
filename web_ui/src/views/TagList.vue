@@ -5,6 +5,7 @@ import type { Tag } from '@/types/tagManagement'
 import { Message } from '@arco-design/web-vue'
 
 const loading = ref(false)
+const loadingMore = ref(false)
 const tags = ref<Tag[]>([])
 const pagination = ref({
   current: 1,
@@ -23,20 +24,32 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
-const fetchTags = async () => {
+const fetchTags = async (isLoadMore = false) => {
   try {
-    loading.value = true
+    if (isLoadMore) {
+      loadingMore.value = true
+    } else {
+      loading.value = true
+    }
     const res = await listTags({
-      skip: (pagination.value.current - 1) * pagination.value.pageSize,
+      offset: (pagination.value.current - 1) * pagination.value.pageSize,
       limit: pagination.value.pageSize
     })
     console.log(res)
-    tags.value = res.list||[]
+    if (isLoadMore) {
+      tags.value = [...tags.value, ...(res.list || [])]
+    } else {
+      tags.value = res.list || []
+    }
     pagination.value.total = res.total || 0
   } catch (error) {
     Message.error('获取标签列表失败')
   } finally {
-    loading.value = false
+    if (isLoadMore) {
+      loadingMore.value = false
+    } else {
+      loading.value = false
+    }
   }
 }
 
@@ -105,6 +118,7 @@ onMounted(() => {
       <a-list
         v-else
         :loading="loading"
+        :loading-more="loadingMore"
         :data="tags"
         :pagination="pagination"
         @page-change="handlePageChange"
@@ -131,6 +145,23 @@ onMounted(() => {
             </a-space>
           </a-list-item>
         </template>
+      <template #footer>
+          <div v-if="pagination.current * pagination.pageSize < pagination.total" class="load-more">
+            <a-button 
+              type="primary"
+              :loading="loadingMore"
+              @click="() => {
+                pagination.current++
+                fetchTags(true)
+              }"
+            >
+              加载更多
+            </a-button>
+              <div class="total-count">
+                共 {{ pagination.total }} 条
+              </div>
+            </div>
+        </template>
       </a-list>
     </a-card>
   </div>
@@ -139,5 +170,10 @@ onMounted(() => {
 <style scoped>
 .tag-list {
   padding: 16px;
+}
+.load-more{
+    width: 120px;
+    margin: 0px auto;
+    text-align: center;
 }
 </style>

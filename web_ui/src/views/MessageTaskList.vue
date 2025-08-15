@@ -5,6 +5,7 @@ import type { MessageTask } from '@/types/messageTask'
 import { useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import ResponsiveTable from '@/components/ResponsiveTable.vue'
+import TaskList from '@/components/TaskList.vue'
 
 const isMobile = ref(window.innerWidth < 768)
 const handleResize = () => {
@@ -102,6 +103,21 @@ const handlePageChange = (page: number) => {
   fetchTaskList()
 }
 
+const handleLoadMore = async () => {
+    loading.value = true
+    try {
+      pagination.value.current += 1
+      const res = await listMessageTasks({
+        offset: (pagination.value.current - 1) * pagination.value.pageSize,
+        limit: pagination.value.pageSize
+      })
+      taskList.value = [...taskList.value, ...res.list]
+      pagination.value.total = res.total
+    } finally {
+      loading.value = false
+    }
+}
+
 const handleAdd = () => {
   router.push('/message-tasks/add')
 }
@@ -176,78 +192,78 @@ onMounted(() => {
         注意：只有添加了任务消息才会定时执行更新任务，点击应用按钮后任务才会生效
       </a-alert>
 
-      <a-table v-if="!isMobile"
-        :data="taskList"
-        :pagination="pagination"
-        @page-change="handlePageChange"
-      >
-        <template #columns>
-          <!-- <a-table-column title="ID" data-index="id" /> -->
-          <a-table-column title="名称" data-index="name" ellipsis :width="200"/>
-          <!-- <a-table-column title="类型" data-index="message_type" ellipsis /> -->
-          <a-table-column title="cron表达式">
-            <template #cell="{ record }">
-              {{ parseCronExpression(record.cron_exp) }}
-            </template>
-          </a-table-column>
-          <a-table-column title="类型" :width="100">
-            <template #cell="{ record }">
-              <a-tag :color="record.message_type === 1 ? 'green' : 'red'">
-                {{ record.message_type === 1 ? 'WeekHook' : 'Message' }}
+      <TaskList
+      :task-list="taskList"
+      :loading="loading"
+      :pagination="pagination"
+      :is-mobile="isMobile"
+      @page-change="handlePageChange"
+      @load-more="handleLoadMore"
+    >
+      <template #table-columns>
+        <a-table-column title="名称" data-index="name" ellipsis :width="200"/>
+        <a-table-column title="cron表达式">
+          <template #cell="{ record }">
+            {{ parseCronExpression(record.cron_exp) }}
+          </template>
+        </a-table-column>
+        <a-table-column title="类型" :width="100">
+          <template #cell="{ record }">
+            <a-tag :color="record.message_type === 1 ? 'green' : 'red'">
+              {{ record.message_type === 1 ? 'WeekHook' : 'Message' }}
+            </a-tag>
+          </template>
+        </a-table-column>
+        <a-table-column title="状态" :width="100">
+          <template #cell="{ record }">
+            <a-tag :color="record.status === 1 ? 'green' : 'red'">
+              {{ record.status === 1 ? '启用' : '禁用' }}
+            </a-tag>
+          </template>
+        </a-table-column>
+      </template>
+
+      <template #list-item-meta="{ item }">
+        <a-list-item-meta>
+          <template #title>
+            {{ item.name }}
+          </template>
+          <template #description>
+            <div>{{ parseCronExpression(item.cron_exp) }}</div>
+            <div>
+              <a-tag :color="item.message_type === 1 ? 'green' : 'red'">
+                {{ item.message_type === 1 ? 'WeekHook' : 'Message' }}
               </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column title="状态" :width="100">
-            <template #cell="{ record }">
-              <a-tag :color="record.status === 1 ? 'green' : 'red'">
-                {{ record.status === 1 ? '启用' : '禁用' }}
+              <a-tag :color="item.status === 1 ? 'green' : 'red'">
+                {{ item.status === 1 ? '启用' : '禁用' }}
               </a-tag>
-            </template>
-          </a-table-column>
-          <a-table-column title="操作" :width="260">
-            <template #cell="{ record }">
-              <a-space>
-                <a-button size="mini" type="primary" @click="handleEdit(record.id)">编辑</a-button>
-                <a-tooltip content="点击测试消息任务">
-                  <a-button size="mini" type="dashed" @click="runTask(record.id,true)">测试</a-button>
-                </a-tooltip>
-                <a-tooltip content="执行更新任务">
-                  <a-button size="mini" type="dashed" @click="runTask(record.id)">执行</a-button>
-                </a-tooltip>
-                <a-button size="mini" status="danger" @click="handleDelete(record.id)">删除</a-button>
-              </a-space>
-            </template>
-          </a-table-column>
-        </template>
-      </a-table>
-      <a-list v-else :data="taskList" :bordered="false">
-        <template #item="{ item }">
-          <a-list-item>
-            <a-list-item-meta>
-              <template #title>
-                {{ item.name }}
-              </template>
-              <template #description>
-                <div>{{ parseCronExpression(item.cron_exp) }}</div>
-                <div>
-                  <a-tag :color="item.message_type === 1 ? 'green' : 'red'">
-                    {{ item.message_type === 1 ? 'WeekHook' : 'Message' }}
-                  </a-tag>
-                  <a-tag :color="item.status === 1 ? 'green' : 'red'">
-                    {{ item.status === 1 ? '启用' : '禁用' }}
-                  </a-tag>
-                </div>
-              </template>
-            </a-list-item-meta>
-            <a-space>
-              <a-button size="mini" type="primary" @click="handleEdit(item.id)">编辑</a-button>
-              <a-button size="mini" type="dashed" @click="runTask(item.id,true)">测试</a-button>
-              <a-button size="mini" type="dashed" @click="runTask(item.id)">执行</a-button>
-              <a-button size="mini" status="danger" @click="handleDelete(item.id)">删除</a-button>
-            </a-space>
-          </a-list-item>
-        </template>
-      </a-list>
+            </div>
+          </template>
+        </a-list-item-meta>
+      </template>
+
+      <template #actions="{ record }">
+        <a-space>
+          <a-button size="mini" type="primary" @click="handleEdit(record.id)">编辑</a-button>
+          <a-tooltip content="点击测试消息任务">
+            <a-button size="mini" type="dashed" @click="runTask(record.id, true)">测试</a-button>
+          </a-tooltip>
+          <a-tooltip content="执行更新任务">
+            <a-button size="mini" type="dashed" @click="runTask(record.id)">执行</a-button>
+          </a-tooltip>
+          <a-button size="mini" status="danger" @click="handleDelete(record.id)">删除</a-button>
+        </a-space>
+      </template>
+
+      <template #mobile-actions="{ record }">
+        <a-space>
+          <a-button size="mini" type="primary" @click="handleEdit(record.id)">编辑</a-button>
+          <a-button size="mini" type="dashed" @click="runTask(record.id, true)">测试</a-button>
+          <a-button size="mini" type="dashed" @click="runTask(record.id)">执行</a-button>
+          <a-button size="mini" status="danger" @click="handleDelete(record.id)">删除</a-button>
+        </a-space>
+      </template>
+    </TaskList>
     </div>
   </a-spin>
 </template>

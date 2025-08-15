@@ -108,9 +108,7 @@ def start_job(job_id:str=None):
         if not cron_exp:
             print_error(f"任务[{task.id}]没有设置cron表达式")
             continue
-        if DEBUG:
-            cron_exp="* * * * *"
-            pass
+      
         job_id=scheduler.add_cron_job(add_job,cron_expr=cron_exp,args=[get_feeds(task),task],job_id=str(task.id),tag="定时采集")
         print(f"已添加任务: {job_id}")
     scheduler.start()

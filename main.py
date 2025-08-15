@@ -8,7 +8,7 @@ if __name__ == '__main__':
         init.init()
     if  cfg.args.job =="True" and cfg.get("server.enable_job",False):
         from jobs import start_all_task
-        threading.Thread(target=start_all_task,daemon=True).start()
+        threading.Thread(target=start_all_task,daemon=False).start()
     else:
         print_warning("未开启定时任务")
     print("启动服务器")

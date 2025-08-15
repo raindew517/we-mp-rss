@@ -7,7 +7,7 @@ server:
    #过期是否发送授权二维通知 默认True
    send_code: ${SEND_CODE:-True}
    #二维通知标题
-   code_title: ${CODE_TITLE:-WeRSS通知}
+   code_title: ${CODE_TITLE:-WeRSS}
    #启动JOB定时任务，默认为True
    enable_job: ${ENABLE_JOB:-True}
    #代码修改自动重启服务，默认为False
@@ -40,7 +40,8 @@ webhook:
 #API服务端口
 port: ${PORT:-8001}
 #调试模式
-debug: False
+debug: ${DEBUG:-False}
+
 
 #最大页数 第一次添加 采集的页数默认5页
 max_page: ${MAX_PAGE:-5}

@@ -1,8 +1,8 @@
 from core.config import cfg
 import time
-def sys_notice(text:str="",title:str=""):
+def sys_notice(text:str="",title:str="",tag:str='系统通知',type=""):
     from core.notice import notice
-    markdown_text = f"### {title} 通知\n{text}"
+    markdown_text = f"### {title} {type} {tag}\n{text}"
     webhook = cfg.get('notice')['dingding']
     if len(webhook)>0:
         notice(webhook, title, markdown_text)

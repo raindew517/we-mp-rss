@@ -305,11 +305,13 @@ class FirefoxController:
             self._install_firefox()
             self._setup_driver()
             self.options.page_load_strategy = "eager"
+          
             # 禁用浏览器错误输出
             self.options.set_preference("webdriver.log.driver", "OFF")
             self.options.set_preference("webdriver.log.browser", "OFF")
-            if headless:
-                self.options.add_argument("--headless") 
+            from core.config import cfg
+            if headless and cfg.get("debug",False):
+                self.options.add_argument("--headless")          # 启用无界面模式
                 pass  
             if headless and  self.system != "windows":
                 self.options.add_argument("--headless")          # 启用无界面模式

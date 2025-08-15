@@ -21,7 +21,7 @@ def testWeb():
             article_data = Web.get_article_content(url)
             del article_data['content']
             print_success(article_data)
-        Web.Close()
+        # Web.Close()
         
         # WX_API.wxLogin(CallBack=Success)
         # WX_API.Token(CallBack=Success)

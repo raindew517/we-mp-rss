@@ -190,12 +190,12 @@ class RSS:
                 type=self.get_content_type()
                 # content = ET.SubElement(entry, "content", type=f"{str(type)}") 
                 # content.text = format_content(rss_item["content"],type)
+                content=format_content(rss_item["content"],type)
                 try:
                     if cfg.get("rss.cdata",False)==True:
-                        content = f"<![CDATA[{str(rss_item['content'])}]]>"  # 使用CDATA包裹内容
+                        content = f"<![CDATA[{content}]]>"  # 使用CDATA包裹内容
                     else:
-                        content = str(rss_item['content'])
-                    ET.SubElement(entry, "content:encoded").text = content
+                        ET.SubElement(entry, "content:encoded").text = content
                 except Exception as e:
                     print(f"Error adding content:encoded element: {e}")
                 pass

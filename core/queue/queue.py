@@ -24,7 +24,7 @@ class TaskQueueManager:
         """
         with self._lock:
             self._queue.put((task, args, kwargs))
-        print_success(f"{self.tag}队列任务添加成功")
+        print_success(f"{self.tag}队列任务添加成功\n")
     def run_task_background(self)->None:
         threading.Thread(target=self.run_tasks, daemon=True).start()  
         print_warning("队列任务后台运行")
@@ -41,6 +41,7 @@ class TaskQueueManager:
             
         try:
             while self._is_running:
+                time.sleep(0.1)  # 避免过于频繁的任务获取 
                 try:
                     # 阻塞获取任务，避免CPU空转
                     task, args, kwargs = self._queue.get(timeout=timeout)
@@ -60,7 +61,7 @@ class TaskQueueManager:
                         self._queue.task_done()
                         # 强制垃圾回收
                         gc.collect()
-                        
+                    
                 except queue.Empty:
                     # 超时无任务，继续检查运行状态
                     continue

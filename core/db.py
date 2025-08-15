@@ -24,7 +24,7 @@ class Db:
             raise ValueError("Database connection has not been initialized.")
         return self.engine
     def get_session_factory(self):
-        return sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True, future=True)
+        return sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=False, future=True)
     def init(self, con_str: str) -> None:
         """Initialize database connection and create tables"""
         try:
@@ -41,8 +41,8 @@ class Db:
                     open(db_path, 'w').close()
             self.engine = create_engine(con_str,
                                      pool_size=2,          # 最小空闲连接数
-                                     max_overflow=10,      # 允许的最大溢出连接数
-                                     pool_timeout=5,      # 获取连接时的超时时间（秒）
+                                     max_overflow=20,      # 允许的最大溢出连接数
+                                     pool_timeout=30,      # 获取连接时的超时时间（秒）
                                      echo=False,
                                      pool_recycle=60,  # 连接池回收时间（秒）
                                      isolation_level="AUTOCOMMIT",  # 设置隔离级别

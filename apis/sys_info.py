@@ -50,6 +50,7 @@ async def system_resources(
     """
     try:
         resources_info=get_system_resources()
+        resources_info["queue"]=TaskQueue.get_queue_info(),
         return success_response(data=resources_info)
     except Exception as e:
         return error_response(
