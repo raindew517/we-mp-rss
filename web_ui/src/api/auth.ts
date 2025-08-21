@@ -43,7 +43,7 @@ export const QRCode = () => {
     qrCodeCounter = 0;
     
     http.get('/wx/auth/qr/code').then(res => {
-      const maxAttempts = 60;
+      const maxAttempts = 500;
       qrCodeIntervalId = setInterval(() => {
         qrCodeCounter++;
         if(qrCodeCounter > maxAttempts) {
