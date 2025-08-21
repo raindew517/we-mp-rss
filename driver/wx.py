@@ -228,9 +228,14 @@ class Wx:
                 self.Notice()
             wait = WebDriverWait(controller.driver, 120)
             wait.until(EC.url_contains(self.WX_HOME))
+            print("登录成功，正在获取cookie和token...")
+            from .success import setStatus
+            self.HasLogin=True
+            setStatus(True)
+            time.sleep(3)
             self.CallBack=CallBack
             self.Call_Success()
-           
+            time.sleep(10)
         except NameError as e:
             # 修正此处，确保异常处理逻辑正确
             print_error(f"\n错误发生: {str(e)}")
@@ -285,16 +290,16 @@ class Wx:
             wx_yuan_count=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[2]/div/span').text
             #总用户数
             wx_user_count=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[3]/div/span').text
+            self.ext_data={"wx_app_name":wx_app_name,
+                        "wx_logo":wx_logo,
+                        "wx_read_yesterday":wx_read_yesterday,
+                        "wx_share_yesterday":wx_share_yesterday,
+                        "wx_watch_yesterday":wx_watch_yesterday,
+                        "wx_yuan_count":wx_yuan_count,
+                        "wx_user_count":wx_user_count}
         except Exception as e:
             print_error(f"获取公众号信息失败: {str(e)}")
-        self.ext_data={"wx_app_name":wx_app_name,
-                       "wx_logo":wx_logo,
-                       "wx_read_yesterday":wx_read_yesterday,
-                       "wx_share_yesterday":wx_share_yesterday,
-                       "wx_watch_yesterday":wx_watch_yesterday,
-                       "wx_yuan_count":wx_yuan_count,
-                       "wx_user_count":wx_user_count}
-
+            self.ext_data=None
 
         # 获取当前所有cookie
         cookies = self.controller.driver.get_cookies()

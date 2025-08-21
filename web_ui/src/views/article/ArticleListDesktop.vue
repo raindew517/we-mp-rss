@@ -703,6 +703,11 @@ const exportArticles = () => {
 </style>
 <style>
 #article-model img {
-  max-width: 100%;
+  max-width: 100% !important;
+  border-width:0px !important;
+}
+iframe{
+  width:100% !important;
+  border:0 !important;
 }
 </style>

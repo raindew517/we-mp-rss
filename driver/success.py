@@ -33,7 +33,7 @@ def Success(data:any,ext_data:any=None):
             # print("\n登录结果:")
             setLoginInfo(data)
             setStatus(True)
-            if ext_data:
+            if ext_data is not None:
                 print_success(f"名称：{ext_data['wx_app_name']}")
             if data['expiry'] !=None:
                 print_success(f"有效时间: {data['expiry']['expiry_time']} (剩余秒数: {data['expiry']['remaining_seconds']}) Token: {data['token']}")

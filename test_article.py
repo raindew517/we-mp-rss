@@ -50,6 +50,6 @@ def testLogin():
     # input("按任意键退出")
 if __name__=="__main__":
     # testLogin()
-    testWeb()
-    # testToken()
+    # testWeb()
+    testToken()
     # testMarkDown()

@@ -17,12 +17,16 @@ def set_token(data:any,ext_data:any=None):
     wx_cfg.set("token", data.get("token", ""))
     wx_cfg.set("cookie", data.get("cookies_str", ""))
     wx_cfg.set("expiry", data.get("expiry", {}))
-    wx_cfg.set("ext_data", ext_data)
+    if ext_data is not None:
+        wx_cfg.set("ext_data", ext_data)
+        print(ext_data)
     wx_cfg.save_config()
     wx_cfg.reload()
-    print(ext_data)
     from jobs.notice import sys_notice
-    sys_notice(f"WeRss授权成功\n- 名称:{ext_data['wx_app_name']}\n- Token: \n{data.get("token")}\n- Expiry: \n{data.get("expiry")['expiry_time']}", cfg.get("server.code_title","WeRss授权成功"))
+    sys_notice(f"""WeRss授权成功\n
+               - Token: {data.get("token")}\n
+               - Expiry: {data.get("expiry")['expiry_time']}
+                """, cfg.get("server.code_title","WeRss授权成功"))
 
 
     # cfg.set("token", data.get("token", ""))

@@ -32,6 +32,7 @@ async def qr_image(current_user=Depends(get_current_user)):
 
 @router.get("/qr/status",summary="获取扫描状态")
 async def qr_status(current_user=Depends(get_current_user)):
+    #  from driver.success import  getStatus
      return success_response({
           "login_status":WX_API.HasLogin,
      })    
