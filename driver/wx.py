@@ -269,21 +269,24 @@ class Wx:
     def Call_Success(self):
         # 获取token
         token = self.extract_token_from_requests()
-        # 获取公众号名称
-        wx_app_name=self.controller.driver.find_element(By.XPATH,'/html/body/div[1]/div/div[4]/div/div/div[2]/div[2]/div[1]/div[1]/div/div[1]/div').text
-        # 获取公众号头像
-        wx_logo=self.controller.driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[1]/img').get_attribute("src")
-        #昨日阅读(次)
-        wx_read_yesterday=self.controller.driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[2]/div/ul/li[1]/em').text
-        #昨日分享(次)
-        wx_share_yesterday=self.controller.driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[2]/div/ul/li[2]/em').text
-        #昨日新增关注(人)
-        wx_watch_yesterday=self.controller.driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[2]/div/ul/li[3]/em/a/span').text
-        #原创内容
-        wx_yuan_count=self.controller.driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[2]/div/span').text
-        #总用户数
-        wx_user_count=self.controller.driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[3]/div/span').text
-        
+        driver =self.controller.driver
+        try:
+            # 获取公众号名称
+            wx_app_name=driver.find_element(By.XPATH,'/html/body/div[1]/div/div[4]/div/div/div[2]/div[2]/div[1]/div[1]/div/div[1]/div').text
+            # 获取公众号头像
+            wx_logo=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[1]/img').get_attribute("src")
+            #昨日阅读(次)
+            wx_read_yesterday=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[2]/div/ul/li[1]/em').text
+            #昨日分享(次)
+            wx_share_yesterday=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[2]/div/ul/li[2]/em').text
+            #昨日新增关注(人)
+            wx_watch_yesterday=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[2]/div/ul/li[3]/em/a/span').text
+            #原创内容
+            wx_yuan_count=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[2]/div/span').text
+            #总用户数
+            wx_user_count=driver.find_element(By.XPATH,'//*[@id="app"]/div[2]/div[1]/div[1]/div/div[3]/div/span').text
+        except Exception as e:
+            print_error(f"获取公众号信息失败: {str(e)}")
         self.ext_data={"wx_app_name":wx_app_name,
                        "wx_logo":wx_logo,
                        "wx_read_yesterday":wx_read_yesterday,
