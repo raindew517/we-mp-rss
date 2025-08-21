@@ -84,7 +84,8 @@ class WXArticleFetcher:
                 "biz": "",
                 }
             }
-        self.controller.start_browser(mobile_mode=True)    
+        self.controller.start_browser(mobile_mode=True,dis_image=True)    
+
         self.driver = self.controller.driver
         print_warning(f"Get:{url} Wait:{self.wait_timeout}")
         self.controller.open_url(url)

@@ -299,7 +299,7 @@ class FirefoxController:
             print(f"驱动配置失败: {str(e)}")
             raise
 
-    def start_browser(self, headless=True, mobile_mode=False):
+    def start_browser(self, headless=True, mobile_mode=False,dis_image=False):
         """启动浏览器"""
         try:
             self._install_firefox()
@@ -326,6 +326,12 @@ class FirefoxController:
                 self.options.set_preference("general.useragent.override", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1")
                 self.options.set_preference("devtools.responsiveUI.presets", "[\"iPhone X\", 375, 812, 3, \"mobile\"]")
                 self.options.set_preference("devtools.responsiveUI.currentPreset", "iPhone X")
+
+            if dis_image:
+                # 禁用图片资源加载
+                self.options.set_preference("permissions.default.image", 2) # 禁用图片加载
+                self.options.set_preference("dom.ipc.plugins.enabled.libflashplayer.so", "false") # 禁用FlashPlayer
+                
 
             service = Service(executable_path=self.driver_path)
             self.driver = webdriver.Firefox(service=service, options=self.options)
