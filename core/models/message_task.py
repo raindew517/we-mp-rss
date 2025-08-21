@@ -7,6 +7,7 @@ from datetime import datetime
 
 # 定义 MessageTask 类，继承自 Base 基类
 class MessageTask(Base):
+    from_attributes = True
     # 指定数据库表名为 message_tasks
     __tablename__ = 'message_tasks'
     

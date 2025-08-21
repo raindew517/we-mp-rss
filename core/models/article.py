@@ -1,5 +1,6 @@
 from  .base import Base,Column,String,Integer,DateTime,Text,DATA_STATUS
 class ArticleBase(Base):
+    from_attributes = True
     __tablename__ = 'articles'
     id = Column(String(255), primary_key=True)
     mp_id = Column(String(255))

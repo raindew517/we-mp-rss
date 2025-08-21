@@ -43,6 +43,6 @@ def testToken():
     auth()
     # input("按任意键退出")
 if __name__=="__main__":
-    # testWeb()
-    testToken()
+    testWeb()
+    # testToken()
     # testMarkDown()

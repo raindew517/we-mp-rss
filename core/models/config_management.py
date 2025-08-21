@@ -5,6 +5,7 @@ from sqlalchemy import Column, Integer, String, Text
 
 # 定义 ConfigManagement 类，继承自 Base 类，用于映射数据库中的 config_management 表
 class ConfigManagement(Base):
+    from_attributes = True
     # 指定映射的数据库表名为 config_management
     __tablename__ = 'config_management'
     # 配置项的键，唯一且建立索引，不能为空

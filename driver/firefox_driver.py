@@ -299,7 +299,7 @@ class FirefoxController:
             print(f"驱动配置失败: {str(e)}")
             raise
 
-    def start_browser(self, headless=True):
+    def start_browser(self, headless=True, mobile_mode=False):
         """启动浏览器"""
         try:
             self._install_firefox()
@@ -310,7 +310,7 @@ class FirefoxController:
             self.options.set_preference("webdriver.log.driver", "OFF")
             self.options.set_preference("webdriver.log.browser", "OFF")
             from core.config import cfg
-            if headless and cfg.get("debug",False)==False:
+            if headless:
                 self.options.add_argument("--headless")          # 启用无界面模式
                 pass  
             if headless and  self.system != "windows":
@@ -320,6 +320,12 @@ class FirefoxController:
                 self.options.add_argument("--disable-dev-shm-usage")  # 解决 Linux 内存不足问题
             # 隐藏状态栏和任务栏
             self.options.set_preference("toolkit.legacyUserProfileCustomizations.stylesheets", True)  # 允许自定义样式
+
+            # 模拟手机模式
+            if mobile_mode:
+                self.options.set_preference("general.useragent.override", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1")
+                self.options.set_preference("devtools.responsiveUI.presets", "[\"iPhone X\", 375, 812, 3, \"mobile\"]")
+                self.options.set_preference("devtools.responsiveUI.currentPreset", "iPhone X")
 
             service = Service(executable_path=self.driver_path)
             self.driver = webdriver.Firefox(service=service, options=self.options)

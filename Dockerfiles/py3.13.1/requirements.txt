@@ -52,3 +52,4 @@ colorama==0.4.6
 markdownify
 psutil
 reportlab
+chardet

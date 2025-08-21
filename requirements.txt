@@ -52,3 +52,4 @@ markdownify
 reportlab
 apscheduler 
 psutil
+chardet

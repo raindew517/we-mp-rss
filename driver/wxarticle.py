@@ -17,7 +17,7 @@ class WXArticleFetcher:
         wait_timeout: 显式等待超时时间(秒)
     """
     
-    def __init__(self, wait_timeout: int = 10):
+    def __init__(self, wait_timeout: int = 3):
         """初始化文章获取器"""
         self.wait_timeout = wait_timeout
         self.controller = FirefoxController()
@@ -40,6 +40,7 @@ class WXArticleFetcher:
         try:
             # 从页面源码中查找biz信息
             page_source = self.driver.page_source
+            print_info(f'开始解析Biz')
             biz_match = re.search(r'var biz = "([^"]+)"', page_source)
             if biz_match:
                 return biz_match.group(1)
@@ -51,7 +52,8 @@ class WXArticleFetcher:
                 
             return ""
             
-        except Exception:
+        except Exception as e:
+            print_error(f"从页面源码中提取biz参数失败: {e}")
             return ""
         
     def get_article_content(self, url: str) -> Dict:
@@ -82,7 +84,7 @@ class WXArticleFetcher:
                 "biz": "",
                 }
             }
-        self.controller.start_browser()    
+        self.controller.start_browser(mobile_mode=True)    
         self.driver = self.controller.driver
         print_warning(f"Get:{url} Wait:{self.wait_timeout}")
         self.controller.open_url(url)
@@ -146,23 +148,22 @@ class WXArticleFetcher:
 
         try:
             # 等待关键元素加载
-            wait.until(
+            ele_logo =wait.until(
                 EC.presence_of_element_located((By.CLASS_NAME, "wx_follow_avatar"))
             )
-            # 查找<div class="wx_follow_hd">元素
-            ele_logo = driver.find_element(By.CLASS_NAME, 'wx_follow_avatar').find_element(By.TAG_NAME, 'img')
             # 获取<img>标签的src属性
-            logo_src = ele_logo.get_attribute('src')
-            ele_name = driver.find_element(By.CLASS_NAME, 'wx_follow_nickname_con')
-            title= ele_name.text
+            logo_src = ele_logo.find_element(By.TAG_NAME, 'img').get_attribute('src')
+
+            # ele_name=driver.find_element((By.CLASS_NAME, "js_wx_follow_nickname"))
+            title=driver.execute_script('return $("#js_wx_follow_nickname").text()')
+            # title= ele_name.text
             info["mp_info"]={
                 "mp_name":title,
                 "logo":logo_src,
                 "biz": self.extract_biz_from_source(url), 
             }
         except Exception as e:
-            # raise Exception(f"文章内容获取失败: {str(e)}")
-            # print(f"获取公众号信息失败: {str(e)}")    
+            print_error(f"获取公众号信息失败: {str(e)}")   
             pass
         self.Close()
         return info
