@@ -42,7 +42,14 @@ def testToken():
     from driver.auth import auth
     auth()
     # input("按任意键退出")
+def testLogin():
+    from driver.wx import WX_API
+    from driver.success import Success
+    de_url=WX_API.GetCode(Success)
+    print(de_url)
+    # input("按任意键退出")
 if __name__=="__main__":
-    testWeb()
+    testLogin()
+    # testWeb()
     # testToken()
     # testMarkDown()

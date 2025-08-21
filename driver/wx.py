@@ -198,9 +198,7 @@ class Wx:
             # 滚动到二维码区域
             qrcode = controller.driver.find_element(By.CLASS_NAME, "login__type__container__scan__qrcode")
             ActionChains(controller.driver).move_to_element(qrcode).perform()
-            wait = WebDriverWait(controller.driver, self.wait_time)
             # 确保二维码可见
-            wait = WebDriverWait(controller.driver, self.wait_time)
             wait.until(EC.visibility_of(qrcode))
             # 全屏截图并裁剪二维码区域
             print("正在生成二维码图片...")
