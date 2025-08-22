@@ -103,6 +103,9 @@ onMounted(() => {
           <a-table-column title="操作">
             <template #cell="{ record }">
               <a-space>
+                <a-link type="primary" target="_blank" :href="`/feed/tag/${record.id}.rss`">
+                  订阅
+                </a-link>
                 <a-button type="text" @click="$router.push(`/tags/edit/${record.id}`)">
                   编辑
                 </a-button>

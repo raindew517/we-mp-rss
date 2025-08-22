@@ -171,7 +171,8 @@ async def update_rss_feeds(
 @router.get("/{feed_id}", summary="获取公众号文章")
 async def get_mp_articles_source(
     request: Request,
-    feed_id: str,
+    feed_id: str=None,
+    tag_id:str=None,
     ext:str="xml",
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -181,7 +182,7 @@ async def get_mp_articles_source(
     template:str=None
     # current_user: dict = Depends(get_current_user)
 ):
-    rss=RSS(name=f'{feed_id}_{limit}_{offset}',ext=ext)
+    rss=RSS(name=f'{tag_id}_{feed_id}_{limit}_{offset}',ext=ext)
     rss.set_content_type(content_type)
     rss_xml = rss.get_cache()
     if rss_xml is not None and is_update==False:
@@ -192,19 +193,28 @@ async def get_mp_articles_source(
     session = DB.get_session()
     try:
         from core.models.article import Article
-        
+        from core.models.tags import Tags
         # 查询公众号信息
         feed = session.query(Feed)
         query=session.query(Feed, Article).join(Article, Feed.id == Article.mp_id)
         rss_domain=cfg.get("rss.base_url",str(request.base_url))
-        if feed_id!="all":
+        if feed_id not in ["all",None]:
             feed=feed.filter(Feed.id == feed_id).first()
-            query=query.filter(Article.mp_id == feed_id)
+            query=query.filter(Article.mp_id==feed_id)
         else:
             feed=Feed()
             feed.mp_name=cfg.get("rss.title","WeRss") or "WeRss"
             feed.mp_intro=cfg.get("rss.description") or "WeRss高效订阅我的公众号"
             feed.mp_cover=cfg.get("rss.cover") or f"{rss_domain}static/logo.svg"
+            #如果传入了tag_id就加载tag对应的订阅信息
+            if tag_id is not None:
+                tags=session.query(Tags).filter(Tags.id == tag_id).first()
+                if tags:
+                    mps_ids = [str(mp['id']) for mp in json.loads(tags.mps_id)] if tags.mps_id else []
+                    query=query.filter(Feed.id.in_(mps_ids))
+                    feed.mp_name = tags.name
+                    feed.mp_intro = tags.intro
+                    feed.mp_cover = tags.cover
         
         if not feed:
             raise HTTPException(
@@ -296,4 +306,18 @@ async def rss(
     is_update:bool=True
 ):
     return await get_mp_articles_source(request=request,feed_id=feed_id, limit=limit,offset=offset, is_update=is_update,ext=ext,kw=kw,content_type=content_type)
+@feed_router.get("/tag/{tag_id}.{ext}", summary="获取公众号文章源")
+async def rss(
+    request: Request,
+    tag_id:str="",
+    feed_id: str=None,
+    ext: str="jmd",
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    kw:str="",
+    content_type:str=Query(None,alias="ctype"),
+    is_update:bool=True
+):
+    return await get_mp_articles_source(request=request,feed_id=feed_id, tag_id=tag_id,limit=limit,offset=offset, is_update=is_update,ext=ext,kw=kw,content_type=content_type)
+
 

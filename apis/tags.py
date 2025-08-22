@@ -70,6 +70,7 @@ async def create_tag(tag: TagsCreate, db: Session = Depends(get_db),cur_user: di
             name=tag.name or '',
             cover=tag.cover or '',
             intro=tag.intro or '',
+            mps_id =tag.mps_id,
             status=tag.status,
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -139,6 +140,7 @@ async def update_tag(tag_id: str, tag_data: TagsCreate, db: Session = Depends(ge
         tag.cover = tag_data.cover
         tag.intro = tag_data.intro
         tag.status = tag_data.status
+        tag.mps_id = tag_data.mps_id
         tag.updated_at = datetime.now()
         
         db.commit()

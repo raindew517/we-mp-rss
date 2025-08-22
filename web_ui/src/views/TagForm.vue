@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTag, createTag, updateTag } from '@/api/tagManagement'
 import type { Tag, TagCreate } from '@/types/tagManagement'
 import { Message } from '@arco-design/web-vue'
 import { uploadCover } from '@/api/tagManagement'
+import MpMultiSelect from '@/components/MpMultiSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,7 +17,8 @@ const formModel = ref<TagCreate>({
   name: '',
   cover: null,
   intro: null,
-  status: 1
+  status: 1,
+  mps_id: []
 })
 
 const rules = {
@@ -27,7 +29,16 @@ const fetchTag = async (id: string) => {
   try {
     loading.value = true
     const res = await getTag(id)
-    formModel.value = res
+    formModel.value = {
+      ...res,
+      mps_id: JSON.parse(res.mps_id||[]),
+    }
+     // 初始化选择器数据
+    nextTick(() => {
+      if (mpSelectorRef.value) {
+        mpSelectorRef.value.parseSelected(formModel.value.mps_id)
+      }
+    })
   } catch (error) {
     Message.error('获取标签详情失败')
   } finally {
@@ -68,6 +79,9 @@ const handleUploadError = (error: Error) => {
   Message.error(`上传出错: ${error.message || '文件上传失败'}`)
 }
 
+const showMpSelector = ref(false)
+const mpSelectorRef = ref<InstanceType<typeof MpMultiSelect> | null>(null)
+
 const handleImageError = (e: Event) => {
   const img = e.target as HTMLImageElement
   img.src = '/default-cover.png'
@@ -76,11 +90,17 @@ const handleImageError = (e: Event) => {
 const handleSubmit = async () => {
   try {
     formLoading.value = true
+     // 将mps_id转换为字符串
+    const submitData = {
+      ...formModel.value,
+      mps_id: JSON.stringify(formModel.value.mps_id)
+    }
+    
     if (isEdit.value) {
-      await updateTag(route.params.id as string, formModel.value)
+      await updateTag(route.params.id as string,submitData)
       Message.success('更新成功')
     } else {
-      await createTag(formModel.value)
+      await createTag(submitData)
       Message.success('创建成功')
     }
     router.push('/tags')
@@ -161,6 +181,18 @@ onMounted(() => {
           />
         </a-form-item>
 
+        <a-form-item label="公众号" field="mps_id">
+          <a-space>
+            <a-input
+              :model-value="(formModel.mps_id||[]).map(mp => mp.id.toString()).join(',')"
+              placeholder="请选择公众号"
+              readonly
+              style="width: 300px"
+            />
+            <a-button @click="showMpSelector = true">选择</a-button>
+          </a-space>
+        </a-form-item>
+
         <a-form-item>
           <a-space>
             <a-button type="primary" html-type="submit" :loading="formLoading">
@@ -172,7 +204,24 @@ onMounted(() => {
       </a-form>
     </a-card>
   </div>
+  <!-- 公众号选择器模态框 -->
+<a-modal
+  v-model:visible="showMpSelector"
+  title="选择公众号"
+  :footer="false"
+  width="800px"
+>
+  <MpMultiSelect 
+    ref="mpSelectorRef"
+    v-model="formModel.mps_id"
+  />
+  <template #footer>
+    <a-button type="primary" @click="showMpSelector = false">确定</a-button>
+  </template>
+</a-modal>
 </template>
+
+
 
 <style scoped>
 .tag-form {

@@ -22,6 +22,7 @@ class MpsWeb(WxGather):
                     return
                 if "当前环境异常，完成验证后即可继续访问" in text:
                     print_error("当前环境异常，完成验证后即可继续访问")
+                    return ""
                 soup = BeautifulSoup(text, 'html.parser')
                 # 找到内容
                 js_content_div = soup

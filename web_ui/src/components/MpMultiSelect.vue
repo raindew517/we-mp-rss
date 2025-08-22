@@ -153,7 +153,7 @@ onMounted(() => {
 
       <a-spin :loading="loading">
         <template v-if="selectedMps.length > 0">
-          <a-space align="center">
+          <a-space align="center" class="title-line">
             <h4>已选公众号 ({{ selectedMps.length }})</h4>
             <a-button size="mini" type="text" @click="clearAll">清空</a-button>
           </a-space>
@@ -172,7 +172,7 @@ onMounted(() => {
           </a-space>
         </template>
 
-        <a-space align="center">
+        <a-space align="center" class="title-line">
           <h4>可选公众号</h4>
           <a-button size="mini" type="text" @click="selectAll">全选</a-button>
         </a-space>
@@ -206,9 +206,12 @@ onMounted(() => {
 .mp-multi-select {
   padding: 15px;
 }
-
+.title-line{
+    width:100%;
+}
 h4 {
   margin-bottom: 10px;
+  display: block;
   font-size: 14px;
   color: var(--color-text-2);
 }
@@ -219,7 +222,8 @@ h4 {
 }
 
 :deep(.arco-list-item:hover) {
-  background-color: var(--color-fill-2);
+  background-color: var(--color-neutral-1);
+  border-radius: 2rem;
 }
 
 .mp-list {
@@ -233,8 +237,11 @@ h4 {
   border-radius: 4px;
   cursor: pointer;
   background-color: var(--color-fill-1);
+  border-radius: 2rem;
 }
-
+.arco-tag-checked {
+  background-color: var(--color-primary-1);
+}
 .mp-item:hover {
   background-color: var(--color-fill-2);
 }
