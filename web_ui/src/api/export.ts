@@ -9,13 +9,11 @@ export const ExportOPML = () => {
 }
 
 export const ExportMPS = () => {
-  return http.get<{code: number, data: string}>('/wx/export/mps/export', {
-    params: {
-      limit: 1000,
-      offset: 0
-    }
-  })
-}
+  return http.get('/wx/export/mps/export', {
+    params: { limit: 1000, offset: 0 },
+    responseType: 'blob',
+  });
+};
 
 export const ImportMPS = (formData) => {
   return http.post<{code: number, data: string}>('/wx/export/mps/import', formData, {
