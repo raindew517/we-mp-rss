@@ -364,8 +364,11 @@ const exportOPML = async () => {
 };
 const exportMPS = async () => {
   try {
-    const response = await ExportMPS();
-    const blob = new Blob([response], { type: 'application/csv' });
+    const res = await ExportMPS();
+    const data = (res as any).data ?? res;
+    const blob = data instanceof Blob
+      ? data
+      : new Blob([data], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -374,7 +377,7 @@ const exportMPS = async () => {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-  } catch (error) {
+  } catch (error: any) {
     Message.error(error?.message || '导出公众号失败');
   }
 };
