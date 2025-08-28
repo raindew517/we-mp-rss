@@ -703,6 +703,15 @@ const exportArticles = () => {
   z-index: 9999 !important;
   /* 确保抽屉在其他内容之上 */
 }
+
+:deep(.arco-btn .arco-icon-down) {
+  transition: transform 0.2s ease-in-out;
+}
+
+:deep(.arco-dropdown-open .arco-icon-down) {
+  transform: rotate(180deg);
+}
+
 </style>
 <style>
 #article-model img {
