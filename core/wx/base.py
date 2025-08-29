@@ -101,8 +101,6 @@ class WxGather:
         text=""
         try:
             session=self.session
-            # 随机选择一个 User-Agent
-            user_agent = random.choice(USER_AGENTS)
             # 更新请求头
             headers = self.fix_header(url)
             r = session.get(url, headers=headers)

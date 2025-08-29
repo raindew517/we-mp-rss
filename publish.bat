@@ -57,6 +57,7 @@ git commit -m "%VERSION% %comment%"
 
 REM 执行git操作
 if %PUSH_FLAG%==1 (
+    git pull origin main
     git push -u origin main 
     git push origin  %tag%
     git push -u gitee main

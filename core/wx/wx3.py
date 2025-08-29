@@ -72,7 +72,8 @@ class MpsAppMsg(WxGather):
             # 随机暂停几秒，避免过快的请求导致过快的被查到
             time.sleep(random.randint(0,interval))
             try:
-                resp = session.get(url, headers=self.headers, params = params, verify=False)
+                headers = self.fix_header(url)
+                resp = session.get(url, headers=headers, params = params, verify=False)
                 
                 msg = resp.json()
                 self._cookies =resp.cookies
