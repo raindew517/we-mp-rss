@@ -14,6 +14,8 @@ def set_token(data:any,ext_data:any=None):
     设置微信登录的Token和Cookie信息
     :param data: 包含Token和Cookie信息的字典
     """
+    if data.get("token", "") == "":
+        return
     wx_cfg.set("token", data.get("token", ""))
     wx_cfg.set("cookie", data.get("cookies_str", ""))
     wx_cfg.set("expiry", data.get("expiry", {}))

@@ -17,6 +17,8 @@ def get_message_task(job_id:Union[str, list]=None) -> list[MessageTask]:
     """
     try:
         session=DB.get_session()
+        # 手动过期所有对象
+        session.expire_all()
         query=session.query(MessageTask).filter(MessageTask.status==1)
         if job_id:
             if isinstance(job_id, list):

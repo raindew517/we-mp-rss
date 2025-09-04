@@ -24,7 +24,7 @@ class Db:
             raise ValueError("Database connection has not been initialized.")
         return self.engine
     def get_session_factory(self):
-        return sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=False, future=True)
+        return sessionmaker(bind=self.engine, autoflush=True, expire_on_commit=True, future=True)
     def init(self, con_str: str) -> None:
         """Initialize database connection and create tables"""
         try:

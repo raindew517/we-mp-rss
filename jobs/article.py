@@ -16,5 +16,5 @@ def UpdateArticle(art:dict):
         return True
     return False
 def Update_Over(data=None):
-    print("更新完成",data)
+    print("更新完成")
     pass
