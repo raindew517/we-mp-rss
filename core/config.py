@@ -64,19 +64,21 @@ class Config:
     def save_config(self):
         config_to_save = self.config.copy()
         try:
-            if self.encryption_enabled:
                 # 生成YAML内容
                 yaml_content = yaml.dump(config_to_save)
+                # 验证YAML格式是否合法
+                try:
+                    yaml.safe_load(yaml_content)
+                except yaml.YAMLError as ye:
+                    print_error(f"YAML格式验证失败: {ye}")
+                    raise
                 # 加密整个YAML内容
                 encrypted_content = self._encrypt(yaml_content)
                 with open(self.config_path, 'w', encoding='utf-8') as f:
                     f.write(encrypted_content)
-            else:
-                with open(self.config_path, 'w', encoding='utf-8') as f:
-                    yaml.dump(config_to_save, f)
-            self.reload()
+                self.reload()
         except Exception as e:
-            print(f"保存配置文件失败: {e}")
+            print_error(f"保存配置文件失败: {e}")
             raise
     def replace_env_vars(self,data):
             if isinstance(data, dict):

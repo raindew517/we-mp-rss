@@ -43,6 +43,7 @@ async def list_message_tasks(
         数据库查询异常: 返回500内部服务器错误
     """
     try:
+        db.expire_all()
         query = db.query(MessageTask)
         if status is not None:
             query = query.filter(MessageTask.status == status)
@@ -182,7 +183,7 @@ async def create_message_task(
         )
         db.add(db_task)
         db.commit()
-        # db.refresh(db_task)
+        db.refresh(db_task)
         return success_response(data=db_task)
     except Exception as e:
         db.rollback()

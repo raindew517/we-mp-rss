@@ -1,6 +1,8 @@
 __pycache__
 *.xml
 config.yaml
+dist/
+build/
 *.pyc
 dock_build.bat
 ./db.db

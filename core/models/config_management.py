@@ -1,7 +1,5 @@
-# 从当前目录的 base.py 模块导入 Base 类
-from .base import Base
 # 从 sqlalchemy 模块导入所需的列类型和数据库相关功能
-from sqlalchemy import Column, Integer, String, Text
+from .base import Base,Column, Integer, String, Text
 
 # 定义 ConfigManagement 类，继承自 Base 类，用于映射数据库中的 config_management 表
 class ConfigManagement(Base):

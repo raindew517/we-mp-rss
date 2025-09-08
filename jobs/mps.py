@@ -53,7 +53,7 @@ def do_job(mp=None,task:MessageTask=None):
             from jobs.webhook import MessageWebHook 
             tms=MessageWebHook(task=task,feed=mp,articles=wx.articles)
             web_hook(tms)
-            print_success(f"任务[{mp.mp_name}]执行成功,{count}成功条数")
+            print_success(f"任务({task.id})[{mp.mp_name}]执行成功,{count}成功条数")
 
 from core.queue import TaskQueue
 def add_job(feeds:list[Feed]=None,task:MessageTask=None,isTest=False):

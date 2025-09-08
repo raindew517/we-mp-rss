@@ -1,6 +1,4 @@
-from  .base import Column,String,Integer,DateTime,Text
-from .base import Base
-
+from  .base import Base,Column,String,Integer,DateTime,Text
 class Tags(Base):   
     #标签数据模型类，用于存储和管理标签信息
     __tablename__ = 'tags'
