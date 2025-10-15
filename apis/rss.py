@@ -73,13 +73,16 @@ async def get_rss_feeds(
         feeds = session.query(Feed).order_by(Feed.created_at.desc()).limit(limit).offset(offset).all()
         rss_domain=cfg.get("rss.base_url",request.base_url)
         # 转换为RSS格式数据
+        from datetime import datetime, timezone, timedelta
+        # assume CST (UTC+8) for naive timestamps
+        cst = timezone(timedelta(hours=8))
         rss_list = [{
             "id": str(feed.id),
             "title": feed.mp_name,
             "link":  f"{rss_domain}rss/{feed.id}",
             "description": feed.mp_intro,
             "image": feed.mp_cover,
-            "updated": feed.created_at.isoformat()
+            "updated": (feed.created_at if getattr(feed.created_at, 'tzinfo', None) is not None else feed.created_at.replace(tzinfo=cst)).isoformat()
         } for feed in feeds]
         
         # 生成RSS XML
@@ -233,7 +236,8 @@ async def get_mp_articles_source(
             query=query.filter(format_search_kw(kw))
         articles =query.order_by(Article.publish_time.desc()).limit(limit).offset(offset).all()
         # 转换为RSS格式数据
-        import datetime
+        from datetime import datetime, timezone, timedelta
+        cst = timezone(timedelta(hours=8))
         rss_list = [{
             "id": str(article.id),
             "title": article.title or "",
@@ -242,7 +246,7 @@ async def get_mp_articles_source(
             "content": article.content or "",
             "image": article.pic_url or "",
             "mp_name":_feed.mp_name or "",
-            "updated": datetime.datetime.fromtimestamp(article.publish_time),
+            "updated": datetime.fromtimestamp(article.publish_time, tz=cst),
             "feed": {
                     "id":_feed.id,
                     "name":_feed.mp_name,

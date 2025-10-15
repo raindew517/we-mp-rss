@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import json
 from core.content_format import format_content
@@ -52,10 +52,33 @@ class RSS:
             return obj.isoformat
         return obj
         
-    def datetime_to_rfc822(self,dt:str)->str:
-        """将datetime对象或时间字符串转换为RFC 822格式的时间字符串"""
-        dt = datetime.fromisoformat(dt)
-        return dt.strftime('%a, %d %b %Y %H:%M:%S %z')
+    def datetime_to_rfc822(self, dt) -> str:
+        """将datetime对象或时间字符串转换为RFC 822格式的时间字符串
+
+        Accepts either a datetime object or an ISO format string. If the
+        datetime is naive (no tzinfo), assume CST (UTC+8) so that '%z' is
+        populated (e.g. +0800).
+        """
+        # Ensure we have a datetime object
+        if isinstance(dt, str):
+            # datetime.fromisoformat can raise; let it propagate for invalid input
+            try:
+                dt_obj = datetime.fromisoformat(dt)
+            except Exception:
+                # Fallback: try to parse common fallback formats
+                dt_obj = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+        elif isinstance(dt, datetime):
+            dt_obj = dt
+        else:
+            # Last-resort: convert to str then parse
+            dt_obj = datetime.fromisoformat(str(dt))
+
+        # If datetime is naive, attach CST (UTC+8)
+        if dt_obj.tzinfo is None:
+            cst = timezone(timedelta(hours=8))
+            dt_obj = dt_obj.replace(tzinfo=cst)
+
+        return dt_obj.strftime('%a, %d %b %Y %H:%M:%S %z')
     
     def add_logo_prefix_to_urls(self, text: str) -> str:
         """在字符串中所有http/https开头的图片URL前添加/static/res/logo/前缀
@@ -90,7 +113,8 @@ class RSS:
         ET.SubElement(channel, "description").text = description
         ET.SubElement(channel, "language").text = language
         ET.SubElement(channel, "generator").text = "Mp-We-Rss"
-        ET.SubElement(channel, "lastBuildDate").text =datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z")
+        # Use timezone-aware now (CST/UTC+8) so %z shows +0800
+        ET.SubElement(channel, "lastBuildDate").text = datetime.now(timezone(timedelta(hours=8))).strftime("%a, %d %b %Y %H:%M:%S %z")
     
         # 设置image子项
         if cfg.get("rss.add_cover",False)==True and image_url != "":
@@ -162,7 +186,8 @@ class RSS:
         ET.SubElement(feed, "link",rel="icon", href=image_url)
         ET.SubElement(feed, "logo").text=str(image_url)
         ET.SubElement(feed, "icon").text=str(image_url)
-        ET.SubElement(feed, "updated").text = datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z")
+        # Use timezone-aware now (CST/UTC+8) so %z shows +0800
+        ET.SubElement(feed, "updated").text = datetime.now(timezone(timedelta(hours=8))).strftime("%a, %d %b %Y %H:%M:%S %z")
         ET.SubElement(feed, "id").text = str(link)
         ET.SubElement(feed, "author").text = "Mp-We-Rss"
         # 设置image子项
