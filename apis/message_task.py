@@ -90,6 +90,32 @@ async def get_message_task(
         return success_response(data=message_task)
     except Exception as e:
         return error_response(code=500, message=str(e))
+@router.get("/message/test/{task_id}", summary="测试消息")
+async def test_message_task(
+    task_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    db=DB.get_session()
+    """
+    测试消息消息任务详情
+    
+    参数:
+        task_id: 消息任务ID
+        
+    返回:
+        包含消息任务详情的成功响应，或错误响应
+        
+    异常:
+        404: 消息任务不存在
+        500: 数据库查询异常
+    """
+    try:
+        message_task = db.query(MessageTask).filter(MessageTask.id == task_id).first()
+        if not message_task:
+            raise HTTPException(status_code=404, detail="Message task not found")
+        return success_response(data=message_task)
+    except Exception as e:
+        return error_response(code=500, message=str(e))
 @router.get("/{task_id}/run", summary="执行单个消息任务详情")
 async def run_message_task(
     task_id: str,

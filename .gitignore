@@ -1,5 +1,6 @@
 __pycache__
 *.xml
+*.tmp
 config.yaml
 dist/
 build/
@@ -15,3 +16,5 @@ data
 build
 dist
 data1
+doc2pdf/*.docx
+doc2pdf/*.pdf

@@ -3,31 +3,17 @@ from driver.success import Success
 from driver.wx import WX_API
 from core.print import print_error,print_info,print_success
 from jobs.fetch_no_article import fetch_articles_without_content
+import base64
+import re
+
+
 def testWeb():
-    # 示例用法
-    try:
-        # fetch_articles_without_content()
-        urls=[
-            "https://mp.weixin.qq.com/s/lAMajfW2jN5rcFNzgXJ4Sg",
-            # "https://mp.weixin.qq.com/s/roc7CmIjuEyqlMgUYRF9dw",
-            # "https://mp.weixin.qq.com/s/yNL6jIHjvbNCH5VRgWpf-w",
-            # "https://mp.weixin.qq.com/s/irJfYFP4TBVb4rD8jFxBoA",
-            # "https://mp.weixin.qq.com/s/SJNb4YfqhlArFdCWhtKmXg",
-            # "https://mp.weixin.qq.com/s/_7owCGjJ1mVaYH9NMPX1TQ",
-            # "https://mp.weixin.qq.com/s/zmhHRTV2S2ZCr2fYPIg5wA",
-        ]
-        for url in urls:
-            Web.Close()
-            article_data = Web.get_article_content(url)
-            del article_data['content']
-            print_success(article_data)
-        # Web.Close()
-        
-        # WX_API.wxLogin(CallBack=Success)
-        # WX_API.Token(CallBack=Success)
-        # input("按任意键退出")
-    except Exception as e:
-        print_error(f"错误: {e}")  
+    urls="""
+    """.strip().split("\n")
+
+    Web.FixArticle(mp_id="MP_WXS_3009671561",urls=urls)
+    pass
+ 
 
 def testMarkDown():
     from core.models import Article
@@ -36,20 +22,41 @@ def testMarkDown():
     art=session.query(Article).filter(Article.content != None).order_by(Article.id.desc()).first()
     # print(art.content)
     from core.content_format import  format_content
-    print(format_content(art.content,"markdown"))
-    pass
+    content= format_content(art.content,"markdown")
+    return content
+
+def testMd2Doc():
+    from tools.mdtools.export import export_md_to_doc
+    export_md_to_doc(mp_id="MP_WXS_3892772220,MP_WXS_3295805547",zip_filename="test.zip")
+
+
+
 def testToken():
     from driver.auth import auth
     auth()
     # input("按任意键退出")
+
 def testLogin():
     from driver.wx import WX_API
     from driver.success import Success
     de_url=WX_API.GetCode(Success)
     print(de_url)
     # input("按任意键退出")
+def testNotice():
+    from jobs.notice import sys_notice
+    text="""
+    消息测试<font color="warning">132例</font>，请相关同事注意。
+> 类型:<font color="comment">用户反馈</font>
+> 普通用户反馈:<font color="comment">117例</font>
+> VIP用户反馈:<font color="comment">15例</font>
+"""
+    sys_notice(text,"测试通知","测试通知","测试通知")
+
+
 if __name__=="__main__":
-    testLogin()
+    # testLogin()
     # testWeb()
+    # testNotice()
+    testMd2Doc()
     # testToken()
     # testMarkDown()

@@ -16,7 +16,7 @@ def format_content(content:str,content_format:str='html'):
         elif content_format == 'markdown':
             from markdownify import markdownify as md
             # 转换HTML到Markdown
-            content = md(content, heading_style="ATX", bullets='-*+', code_language='python')
+            content = md(content, heading_style="ATX", bullets='-*+', code_language='python', strip=['span', 'p', 'div'])
             # 替换多个连续换行符为单个换行符
             # content = re.sub(r'\n\s*', '', content)
             content = re.sub(r'\n+', '\n', content)

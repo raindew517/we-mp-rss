@@ -91,13 +91,21 @@ class Db:
             pass      
         return False
      
-    def add_article(self, article_data: dict) -> bool:
+    def add_article(self, article_data: dict,check_exist=False) -> bool:
         try:
             session=self.get_session()
             from datetime import datetime
             art = Article(**article_data)
             if art.id:
                art.id=f"{str(art.mp_id)}-{art.id}".replace("MP_WXS_","")
+            
+            if check_exist:
+                # 检查文章是否已存在
+                existing_article = session.query(Article).filter(Article.url == art.url or Article.id == art.id).first()
+                if existing_article is not None:
+                    print_warning(f"Article already exists: {art.id}")
+                    return False
+                
             if art.created_at is None:
                 art.created_at=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             if art.updated_at is None:

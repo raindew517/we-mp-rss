@@ -34,6 +34,10 @@
                       @click="$event.stopPropagation(); deleteMp(item.id)">
                       <template #icon><icon-delete /></template>
                     </a-button>
+                    <a-button v-if="activeMpId === item.id && item.id != ''" size="mini" type="text"
+                      @click="$event.stopPropagation(); copyMpId(item.id)">
+                      <template #icon><icon-copy /></template>
+                    </a-button>
                   </div>
                 </a-list-item>
               </template>
@@ -48,6 +52,11 @@
         <a-page-header :title="activeFeed ? activeFeed.name : '全部'" :subtitle="'管理您的公众号订阅内容'" :show-back="false">
           <template #extra>
             <a-space>
+              <a-button  @click="handleExportShow()">
+                <template #icon><icon-export /></template>
+                导出
+              </a-button>
+              <ExportModal ref="exportModal"  />
               <a-button @click="refresh" v-if="activeFeed?.id != ''">
                 <template #icon><icon-refresh /></template>
                 刷新
@@ -175,6 +184,7 @@ import axios from 'axios'
 import { IconApps, IconAtt, IconDelete, IconEdit, IconEye, IconRefresh, IconScan, IconWeiboCircleFill, IconWifi, IconCode } from '@arco-design/web-vue/es/icon'
 import { getArticles, deleteArticle as deleteArticleApi, ClearArticle, ClearDuplicateArticle, getArticleDetail } from '@/api/article'
 import { ExportOPML, ExportMPS, ImportMPS } from '@/api/export'
+import ExportModal from '@/components/ExportModal.vue'
 import { getSubscriptions, UpdateMps } from '@/api/subscription'
 import { inject } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
@@ -188,6 +198,7 @@ const loading = ref(false)
 const mpList = ref([])
 const mpLoading = ref(false)
 const activeMpId = ref('')
+const exportModal = ref()
 const selectedRowKeys = ref([])
 const mpPagination = ref({
   current: 1,
@@ -262,7 +273,7 @@ const columns = [
     dataIndex: 'publish_time',
     width: '140',
     render: ({ record }) => h('span',
-      { style: { color: 'var(--color-text-3)', fontSize: '12px' } },
+      { style: { color: 'rgb(var(--color-text-3))', fontSize: '12px' } },
       formatTimestamp(record.publish_time)
     )
   },
@@ -561,6 +572,13 @@ const handleBatchDelete = () => {
   });
 }
 
+const handleExportShow = async () => {
+  let mp_id=activeFeed.value?.id
+  let ids=selectedRowKeys.value
+  exportModal.value.show(mp_id,ids)
+}
+
+
 onMounted(() => {
   console.log('组件挂载，开始获取数据')
   fetchMpList().then(() => {
@@ -601,6 +619,32 @@ const fetchMpList = async () => {
     mpLoading.value = false
   }
 }
+
+const copyMpId = async (mpId: string) => {
+  try {
+    await navigator.clipboard.writeText(mpId);
+    Message.success('MP ID 已复制到剪贴板');
+  } catch (error) {
+    // 如果 clipboard API 不可用，使用传统方法
+    const textArea = document.createElement('textarea');
+    textArea.value = mpId;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      Message.success('MP ID 已复制到剪贴板');
+    } catch (err) {
+      Message.error('复制失败，请手动复制');
+      console.error('复制失败:', err);
+    }
+    document.body.removeChild(textArea);
+  }
+}
+
 const deleteMp = async (mpId: string) => {
   try {
     Modal.confirm({

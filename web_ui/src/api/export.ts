@@ -16,7 +16,7 @@ export const ExportMPS = () => {
   });
 };
 
-export const ImportMPS = (formData) => {
+export const ImportMPS = (formData: FormData) => {
   return http.post<{code: number, data: string}>('/wx/export/mps/import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'

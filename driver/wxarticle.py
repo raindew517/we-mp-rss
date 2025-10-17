@@ -5,7 +5,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from typing import Dict
 from core.print import print_error,print_info,print_success,print_warning
 import time
+import base64
 import re
+from datetime import datetime
 from core.config import cfg
 
 class WXArticleFetcher:
@@ -23,6 +25,47 @@ class WXArticleFetcher:
         self.controller = FirefoxController()
         if not self.controller:
             raise Exception("WebDriver未初始化或未登录")
+    
+    def convert_publish_time_to_timestamp(self, publish_time_str: str) -> int:
+        """将发布时间字符串转换为时间戳
+        
+        Args:
+            publish_time_str: 发布时间字符串，如 "2024-01-01" 或 "2024-01-01 12:30"
+            
+        Returns:
+            时间戳（秒）
+        """
+        try:
+            # 尝试解析不同的时间格式
+            formats = [
+                "%Y-%m-%d %H:%M:%S",  # 2024-01-01 12:30:45
+                "%Y年%m月%d日 %H:%M",        # 2024年03月24日 17:14
+                "%Y-%m-%d %H:%M",     # 2024-01-01 12:30
+                "%Y-%m-%d",           # 2024-01-01
+                "%Y年%m月%d日",        # 2024年01月01日
+                "%m月%d日",            # 01月01日 (当年)
+            ]
+            
+            for fmt in formats:
+                try:
+                    if fmt == "%m月%d日":
+                        # 对于只有月日的格式，添加当前年份
+                        current_year = datetime.now().year
+                        full_time_str = f"{current_year}年{publish_time_str}"
+                        dt = datetime.strptime(full_time_str, "%Y年%m月%d日")
+                    else:
+                        dt = datetime.strptime(publish_time_str, fmt)
+                    return int(dt.timestamp())
+                except ValueError:
+                    continue
+            
+            # 如果所有格式都失败，返回当前时间戳
+            print_warning(f"无法解析时间格式: {publish_time_str}，使用当前时间")
+            return int(datetime.now().timestamp())
+            
+        except Exception as e:
+            print_error(f"时间转换失败: {e}")
+            return int(datetime.now().timestamp())
        
         
     def extract_biz_from_source(self,url:str) -> str:
@@ -55,7 +98,55 @@ class WXArticleFetcher:
         except Exception as e:
             print_error(f"从页面源码中提取biz参数失败: {e}")
             return ""
-        
+    def extract_id_from_url(self,url:str) -> str:
+        """从微信文章URL中提取ID"""
+        # 从URL中提取ID部分
+        match = re.search(r'/s/([A-Za-z0-9_-]+)', url)
+        if not match:
+            return None
+        id_str = match.group(1)
+          # 添加必要的填充
+        padding = 4 - len(id_str) % 4
+        if padding != 4:
+            id_str += '=' * padding
+        try:
+            # 解码base64
+            id_number = base64.b64decode(id_str).decode("utf-8")
+            return id_number
+        except Exception as e:
+            pass
+        return id_str  
+    def FixArticle(self,urls:list=None,mp_id:str=None):
+        # 示例用法
+        try:
+            from jobs.article import UpdateArticle
+            from core.models.article import Article
+            # fetch_articles_without_content()
+            urls=[
+                "https://mp.weixin.qq.com/s/YTHUfxzWCjSRnfElEkL2Xg",
+            ] if urls is None else urls
+            for url in urls:
+                article_data = Web.get_article_content(url)
+                # 将 article_data 转换为 Article 对象
+                # 从URL中提取ID并转换为数字
+                article = {                
+                    "id":article_data.get('id'), 
+                    "title":article_data.get('title'),
+                    "mp_id":article_data.get('mp_id') if mp_id is None else mp_id, 
+                    "publish_time":article_data.get('publish_time'),
+                    "pic_url":article_data.get('pic_url'),
+                    "content":article_data.get('content'),
+                    "url":url,
+                }
+                del article_data['content']
+                print_success(article_data)
+                ok=UpdateArticle(article,check_exist=True)
+                if ok:
+                    print_info(f"已更新文章: {article_data['title']}")
+                time.sleep(3)  # 避免请求过快
+            self.Close()
+        except Exception as e:
+            print_error(f"错误: {e}") 
     def get_article_content(self, url: str) -> Dict:
         """获取单篇文章详细内容
         
@@ -74,6 +165,7 @@ class WXArticleFetcher:
             Exception: 如果未登录或获取内容失败
         """
         info={
+                "id": self.extract_id_from_url(url),
                 "title": "",
                 "publish_time": "",
                 "content": "",
@@ -103,6 +195,18 @@ class WXArticleFetcher:
             if  "内容审核中" in body:
                 info['content']="DELETED"
                 raise Exception("内容审核中")
+            if "该内容暂时无法查看" in body:
+                info["content"]="DELETED"
+                raise Exception("该内容暂时无法查看")
+            if "违规无法查看" in body:
+                info["content"]="DELETED"
+                raise Exception("违规无法查看")
+            if "发送失败无法查看" in body:
+                info["content"]="DELETED"
+                raise Exception("发送失败无法查看")
+            if "Unable to view this content because it violates regulation" in body:     
+                info["content"]="DELETED"
+                raise Exception("违规无法查看")
             # 等待关键元素加载
             wait.until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "#activity-detail"))
@@ -120,9 +224,12 @@ class WXArticleFetcher:
                 By.CSS_SELECTOR, "#meta_content .rich_media_meta_text"
             ).text.strip()
             
-            publish_time = driver.find_element(
+            publish_time_str = driver.find_element(
                 By.CSS_SELECTOR, "#publish_time"
             ).text.strip()
+            
+            # 将发布时间转换为时间戳
+            publish_time = self.convert_publish_time_to_timestamp(publish_time_str)
             
             # 获取正文内容和图片
             content_element = driver.find_element(
@@ -135,6 +242,8 @@ class WXArticleFetcher:
                 for img in content_element.find_elements(By.TAG_NAME, "img")
                 if img.get_attribute("data-src") or img.get_attribute("src")
             ]
+            if images and len(images)>0:
+                info["pic_url"]=images[0]
             info["title"]=title
             info["author"]=author
             info["publish_time"]=publish_time
@@ -163,6 +272,7 @@ class WXArticleFetcher:
                 "logo":logo_src,
                 "biz": self.extract_biz_from_source(url), 
             }
+            info["mp_id"]= "MP_WXS_"+base64.b64decode(info["mp_info"]["biz"]).decode("utf-8")
         except Exception as e:
             print_error(f"获取公众号信息失败: {str(e)}")   
             pass
