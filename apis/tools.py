@@ -176,25 +176,34 @@ async def list_export_files(
     """
     try:
         from .ver import API_VERSION
-        export_path = f"./data/docs/{mp_id}/"
-        
+        safe_root = os.path.normpath("./data/docs")
+        # Ensure mp_id is not None or empty
+        if not mp_id or not isinstance(mp_id, str):
+            return success_response([])
+        export_path = os.path.normpath(os.path.join(safe_root, mp_id))
+        # Validate that export_path is within safe_root
+        if not export_path.startswith(safe_root):
+            return success_response([])
         if not os.path.exists(export_path):
             return success_response([])
-        
         files = []
         for root, _, filenames in os.walk(export_path):
+            # Ensure root is also within safe_root, in case of symlinks or traversal
+            root_norm = os.path.normpath(root)
+            if not root_norm.startswith(safe_root):
+                continue
             for filename in filenames:
                 if filename.endswith('.zip'):
                     file_path = os.path.join(root, filename)
                     file_stat = os.stat(file_path)
-                    file_path=file_path.replace(export_path,"")
+                    file_path = file_path.replace(export_path, "")
                     files.append({
                         "filename": filename,
                         "size": file_stat.st_size,
                         "created_time": datetime.fromtimestamp(file_stat.st_ctime).isoformat(),
                         "modified_time": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
-                        "path":file_path,
-                        "download_url":f"{API_VERSION}/tools/export/download?mp_id={mp_id}&filename={file_path}"  # 下载链接
+                        "path": file_path,
+                        "download_url": f"{API_VERSION}/tools/export/download?mp_id={mp_id}&filename={file_path}"  # 下载链接
                     })
         
         # 按修改时间倒序排列
@@ -224,26 +233,25 @@ async def delete_export_file(
         if not request.filename :
             return error_response(400, "文件名和公众号ID不能为空")
         
-        # 构建文件路径
-        file_path = f"./data/docs/{request.mp_id}/{request.filename}"
-        
-        # 检查文件是否存在
-        if not os.path.exists(file_path):
-            return error_response(404, "文件不存在")
+        # 构建文件路径并做路径归一化及安全检测
+        base_path = os.path.realpath(f"./data/docs/{request.mp_id}/")
+        unsafe_path = os.path.join(base_path, request.filename)
+        safe_path = os.path.realpath(os.path.normpath(unsafe_path))
         
         # 安全检查：确保文件在指定目录内，防止路径遍历攻击
-        real_file_path = os.path.realpath(file_path)
-        real_base_path = os.path.realpath(f"./data/docs/{request.mp_id}/")
-        
-        if not real_file_path.startswith(real_base_path):
+        if not safe_path.startswith(base_path):
             return error_response(403, "无权限删除该文件")
         
         # 只允许删除.zip文件
         if not request.filename.endswith('.zip'):
             return error_response(400, "只能删除.zip格式的导出文件")
         
+        # 检查文件是否存在
+        if not os.path.exists(safe_path):
+            return error_response(404, "文件不存在")
+        
         # 删除文件
-        os.remove(file_path)
+        os.remove(safe_path)
         
         return success_response({
             "filename": request.filename,
