@@ -224,26 +224,25 @@ async def delete_export_file(
         if not request.filename :
             return error_response(400, "文件名和公众号ID不能为空")
         
-        # 构建文件路径
-        file_path = f"./data/docs/{request.mp_id}/{request.filename}"
-        
-        # 检查文件是否存在
-        if not os.path.exists(file_path):
-            return error_response(404, "文件不存在")
+        # 构建文件路径并做路径归一化及安全检测
+        base_path = os.path.realpath(f"./data/docs/{request.mp_id}/")
+        unsafe_path = os.path.join(base_path, request.filename)
+        safe_path = os.path.realpath(os.path.normpath(unsafe_path))
         
         # 安全检查：确保文件在指定目录内，防止路径遍历攻击
-        real_file_path = os.path.realpath(file_path)
-        real_base_path = os.path.realpath(f"./data/docs/{request.mp_id}/")
-        
-        if not real_file_path.startswith(real_base_path):
+        if not safe_path.startswith(base_path):
             return error_response(403, "无权限删除该文件")
         
         # 只允许删除.zip文件
         if not request.filename.endswith('.zip'):
             return error_response(400, "只能删除.zip格式的导出文件")
         
+        # 检查文件是否存在
+        if not os.path.exists(safe_path):
+            return error_response(404, "文件不存在")
+        
         # 删除文件
-        os.remove(file_path)
+        os.remove(safe_path)
         
         return success_response({
             "filename": request.filename,
