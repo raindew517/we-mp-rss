@@ -176,25 +176,34 @@ async def list_export_files(
     """
     try:
         from .ver import API_VERSION
-        export_path = f"./data/docs/{mp_id}/"
-        
+        safe_root = os.path.normpath("./data/docs")
+        # Ensure mp_id is not None or empty
+        if not mp_id or not isinstance(mp_id, str):
+            return success_response([])
+        export_path = os.path.normpath(os.path.join(safe_root, mp_id))
+        # Validate that export_path is within safe_root
+        if not export_path.startswith(safe_root):
+            return success_response([])
         if not os.path.exists(export_path):
             return success_response([])
-        
         files = []
         for root, _, filenames in os.walk(export_path):
+            # Ensure root is also within safe_root, in case of symlinks or traversal
+            root_norm = os.path.normpath(root)
+            if not root_norm.startswith(safe_root):
+                continue
             for filename in filenames:
                 if filename.endswith('.zip'):
                     file_path = os.path.join(root, filename)
                     file_stat = os.stat(file_path)
-                    file_path=file_path.replace(export_path,"")
+                    file_path = file_path.replace(export_path, "")
                     files.append({
                         "filename": filename,
                         "size": file_stat.st_size,
                         "created_time": datetime.fromtimestamp(file_stat.st_ctime).isoformat(),
                         "modified_time": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
-                        "path":file_path,
-                        "download_url":f"{API_VERSION}/tools/export/download?mp_id={mp_id}&filename={file_path}"  # 下载链接
+                        "path": file_path,
+                        "download_url": f"{API_VERSION}/tools/export/download?mp_id={mp_id}&filename={file_path}"  # 下载链接
                     })
         
         # 按修改时间倒序排列
