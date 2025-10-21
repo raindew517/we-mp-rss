@@ -27,7 +27,8 @@ def testMarkDown():
 
 def testMd2Doc():
     from tools.mdtools.export import export_md_to_doc
-    export_md_to_doc(mp_id="MP_WXS_3892772220,MP_WXS_3295805547",zip_filename="test.zip")
+    doc_id="3076560530-2673097250_1,3076560530-2673097167_1,3076560530-2673097166_1"
+    export_md_to_doc(mp_id="MP_WXS_3076560530",export_md=True, zip_file=False,remove_images=False,remove_links=False)
 
 
 

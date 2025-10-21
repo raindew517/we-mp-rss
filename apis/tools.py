@@ -138,6 +138,7 @@ async def export_articles(
 async def download_export_file(
     filename: str = Query(..., description="文件名"),
     mp_id: Optional[str] = Query(None, description="公众号ID"),
+    delete_after_download: bool = Query(False, description="下载后删除文件"),
     # current_user: dict = Depends(get_current_user)
 ):
     """
@@ -152,7 +153,7 @@ async def download_export_file(
         def cleanup_file():
             """后台任务：删除临时文件"""
             try:
-                if os.path.exists(file_path):
+                if os.path.exists(file_path) and delete_after_download:
                     os.remove(file_path)
             except Exception:
                 pass

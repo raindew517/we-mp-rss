@@ -142,7 +142,7 @@ def process_articles(session, mp_id=None,doc_id=None, page_size=10, page_count=1
     return record_count
 
 def export_md_to_doc(mp_id:str=None,doc_id:list=None,page_size:int=10,page_count:int=1,add_title=True,remove_images:bool=True,remove_links:bool=False
-                     ,export_md:bool=False,export_docx:bool=False,export_json:bool=False,export_csv:bool=False,export_pdf:bool=True,domain="",zip_filename=None):
+                     ,export_md:bool=False,export_docx:bool=False,export_json:bool=False,export_csv:bool=False,export_pdf:bool=True,domain="",zip_filename=None,zip_file=True):
     session = DB.get_session()
     if mp_id==None:
         raise ValueError("公众号ID不能为空")
@@ -191,6 +191,13 @@ def export_md_to_doc(mp_id:str=None,doc_id:list=None,page_size:int=10,page_count
             zip_filename = f"{docx_path}{zip_filename}"
             if not zip_filename.endswith('.zip'):
                 zip_filename += '.zip'
+        if zip_file==False:
+            exported_files=[]
+            for root, dirs, files in os.walk(docx_path):
+                    for file in files:
+                        print_success(f"导出文件: {os.path.join(root, file)}")
+                        exported_files.append(os.path.join(root, file))
+            return exported_files
         try:
             if os.path.exists(zip_filename):
                 os.remove(zip_filename)
