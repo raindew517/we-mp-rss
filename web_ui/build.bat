@@ -4,7 +4,7 @@
 set DIST_DIR="dist"
 set TARGET_DIR="..\static"
 :: 执行构建
-@REM yarn build
+yarn build
 
 :: 复制文件到static目录
 echo 正在复制构建文件到%TARGET_DIR%...

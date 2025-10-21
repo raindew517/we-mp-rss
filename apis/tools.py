@@ -134,11 +134,11 @@ async def export_articles(
     except Exception as e:
         return error_response(500, f"导出失败: {str(e)}")
 
-@router.get("/export/download/{mp_id}", summary="下载导出文件")
+@router.get("/export/download", summary="下载导出文件")
 async def download_export_file(
-    mp_id: str,
     filename: str = Query(..., description="文件名"),
-    current_user: dict = Depends(get_current_user)
+    mp_id: Optional[str] = Query(None, description="公众号ID"),
+    # current_user: dict = Depends(get_current_user)
 ):
     """
     下载导出的文件
@@ -166,31 +166,36 @@ async def download_export_file(
     except Exception as e:
         return error_response(500, f"下载失败: {str(e)}")
 
-@router.get("/export/list/{mp_id}", summary="获取导出文件列表", response_model=BaseResponse)
+@router.get("/export/list", summary="获取导出文件列表", response_model=BaseResponse)
 async def list_export_files(
-    mp_id: str,
+    mp_id: Optional[str] = Query(None, description="公众号ID"),
     current_user: dict = Depends(get_current_user)
 ):
     """
     获取指定公众号的导出文件列表
     """
     try:
+        from .ver import API_VERSION
         export_path = f"./data/docs/{mp_id}/"
         
         if not os.path.exists(export_path):
             return success_response([])
         
         files = []
-        for filename in os.listdir(export_path):
-            if filename.endswith('.zip'):
-                file_path = os.path.join(export_path, filename)
-                file_stat = os.stat(file_path)
-                files.append({
-                    "filename": filename,
-                    "size": file_stat.st_size,
-                    "created_time": datetime.fromtimestamp(file_stat.st_ctime).isoformat(),
-                    "modified_time": datetime.fromtimestamp(file_stat.st_mtime).isoformat()
-                })
+        for root, _, filenames in os.walk(export_path):
+            for filename in filenames:
+                if filename.endswith('.zip'):
+                    file_path = os.path.join(root, filename)
+                    file_stat = os.stat(file_path)
+                    file_path=file_path.replace(export_path,"")
+                    files.append({
+                        "filename": filename,
+                        "size": file_stat.st_size,
+                        "created_time": datetime.fromtimestamp(file_stat.st_ctime).isoformat(),
+                        "modified_time": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
+                        "path":file_path,
+                        "download_url":f"{API_VERSION}/tools/export/download?mp_id={mp_id}&filename={file_path}"  # 下载链接
+                    })
         
         # 按修改时间倒序排列
         files.sort(key=lambda x: x["modified_time"], reverse=True)
@@ -199,3 +204,69 @@ async def list_export_files(
         
     except Exception as e:
         return error_response(500, f"获取文件列表失败: {str(e)}")
+
+# 删除文件请求模型
+class DeleteFileRequest(BaseModel):
+    """删除文件请求模型"""
+    filename: str = Field(..., description="文件名", example="exported_articles_20241021_143000.zip")
+    mp_id: str = Field(..., description="公众号ID", example="MP_WXS_3892772220")
+
+@router.delete("/export/delete", summary="删除导出文件", response_model=BaseResponse)
+async def delete_export_file(
+    request: DeleteFileRequest = Body(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    删除指定的导出文件
+    """
+    try:
+        # 参数验证
+        if not request.filename :
+            return error_response(400, "文件名和公众号ID不能为空")
+        
+        # 构建文件路径
+        file_path = f"./data/docs/{request.mp_id}/{request.filename}"
+        
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            return error_response(404, "文件不存在")
+        
+        # 安全检查：确保文件在指定目录内，防止路径遍历攻击
+        real_file_path = os.path.realpath(file_path)
+        real_base_path = os.path.realpath(f"./data/docs/{request.mp_id}/")
+        
+        if not real_file_path.startswith(real_base_path):
+            return error_response(403, "无权限删除该文件")
+        
+        # 只允许删除.zip文件
+        if not request.filename.endswith('.zip'):
+            return error_response(400, "只能删除.zip格式的导出文件")
+        
+        # 删除文件
+        os.remove(file_path)
+        
+        return success_response({
+            "filename": request.filename,
+            "message": "文件删除成功"
+        })
+        
+    except PermissionError:
+        return error_response(403, "没有权限删除该文件")
+    except ValueError as e:
+        return error_response(422, f"请求参数验证失败: {str(e)}")
+    except Exception as e:
+        return error_response(500, f"删除文件失败: {str(e)}")
+
+# 兼容性接口：支持查询参数方式删除
+@router.delete("/export/delete-by-query", summary="删除导出文件(查询参数)", response_model=BaseResponse)
+async def delete_export_file_by_query(
+    filename: str = Query(..., description="文件名"),
+    mp_id: str = Query(..., description="公众号ID"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    删除指定的导出文件（通过查询参数）
+    """
+    # 创建请求对象并调用主删除函数
+    request = DeleteFileRequest(filename=filename, mp_id=mp_id)
+    return await delete_export_file(request, current_user)

@@ -1,6 +1,7 @@
 <template>
   <a-spin :loading="fullLoading" tip="正在刷新..." size="large">
     <a-layout class="article-list">
+      
       <a-layout-sider :width="300"
         :style="{ background: '#fff', padding: '0', borderRight: '1px solid #eee', display: 'flex', flexDirection: 'column', border: 0 }">
         <a-card :bordered="false" title="公众号"
@@ -113,7 +114,6 @@
             <a-input-search v-model="searchText" placeholder="搜索文章标题" @search="handleSearch" @keyup.enter="handleSearch"
               allow-clear />
           </div>
-
           <a-table :columns="columns" :data="articles" :loading="loading" :pagination="pagination" :row-selection="{
             type: 'checkbox',
             showCheckedAll: true,
@@ -575,7 +575,8 @@ const handleBatchDelete = () => {
 const handleExportShow = async () => {
   let mp_id=activeFeed.value?.id
   let ids=selectedRowKeys.value
-  exportModal.value.show(mp_id,ids)
+  let mp_name=activeFeed.value?.name || activeFeed.value?.mp_name || '全部'
+  exportModal.value.show(mp_id,ids,mp_name)
 }
 
 

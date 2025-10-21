@@ -189,6 +189,8 @@ def export_md_to_doc(mp_id:str=None,doc_id:list=None,page_size:int=10,page_count
             zip_filename = f"{docx_path}exported_articles_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
         else:
             zip_filename = f"{docx_path}{zip_filename}"
+            if not zip_filename.endswith('.zip'):
+                zip_filename += '.zip'
         try:
             if os.path.exists(zip_filename):
                 os.remove(zip_filename)

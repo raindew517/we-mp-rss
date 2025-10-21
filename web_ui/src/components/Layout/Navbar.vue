@@ -11,6 +11,12 @@
         </template>
         订阅管理
       </a-menu-item>
+      <a-menu-item key="/export/records">
+        <template #icon>
+          <icon-export />
+        </template>
+        导出纪录
+      </a-menu-item>
       <a-menu-item key="/tags">
         <template #icon>
           <icon-tag />

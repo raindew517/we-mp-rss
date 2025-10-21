@@ -17,7 +17,7 @@ const columns = [
   // { title: '操作', slotName: 'action' }
 ]
 
-const configList = ref<ConfigManagement[]>([])
+const configList = ref<any>([])
 const loading = ref(false)
 const error = ref('')
 const pagination = reactive({
