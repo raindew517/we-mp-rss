@@ -34,4 +34,9 @@ jobs:
      
       - name: Build and Push Multi-platform Docker Image
         run: |
+          echo 构建多架构镜像: %name%:%version%
+          echo 创建并使用buildx构建器（支持多架构）
+          docker buildx create --name multiarch --use 2>nul || docker buildx use multiarch
+
+          echo 构建多架构镜像
           docker buildx build  --platform linux/amd64,linux/arm64  --tag ghcr.io/${{github.repository}}:latest--push  .
