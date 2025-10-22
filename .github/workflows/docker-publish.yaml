@@ -15,15 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v1
-      #   with:
-      #     node-version: '20.18.3' # 替换为你的项目所需的 Node.js 版本
-      # - name: Build Web UI
-      #   run: |
-      #     cd ./web_ui
-      #     chmod +x build.sh
-      #     ./build.sh
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -39,4 +30,4 @@ jobs:
           docker buildx create --name multiarch --use 2>nul || docker buildx use multiarch
 
           echo 构建多架构镜像
-          docker buildx build  --platform linux/amd64,linux/arm64  --tag ghcr.io/${{github.repository}}:latest--push  .
+          docker buildx build  --platform linux/amd64,linux/arm64  --tag ghcr.io/${{github.repository}}:latest --push  .
