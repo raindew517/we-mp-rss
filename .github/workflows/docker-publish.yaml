@@ -28,6 +28,11 @@ jobs:
           echo 构建多架构镜像: ${{github.repository}}
           echo 创建并使用buildx构建器（支持多架构）
           docker buildx create --name multiarch --use 2>nul || docker buildx use multiarch
-
           echo 构建多架构镜像
-          docker buildx build  --platform linux/amd64,linux/arm64  --tag ghcr.io/${{github.repository}}:latest --push  .
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag ghcr.io/${{github.repository}}:latest \
+            --label "org.opencontainers.image.source=https://github.com/${{github.repository}}" \
+            --label "org.opencontainers.image.description=WeRss 微信公众号RSS订阅服务" \
+            --label "org.opencontainers.image.licenses=MIT" \
+            --push .
