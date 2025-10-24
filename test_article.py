@@ -57,7 +57,7 @@ def testNotice():
 if __name__=="__main__":
     # testLogin()
     # testWeb()
-    # testNotice()
-    testMd2Doc()
+    testNotice()
+    # testMd2Doc()
     # testToken()
     # testMarkDown()
