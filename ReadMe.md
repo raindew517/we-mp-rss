@@ -27,7 +27,7 @@ docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  rachelos/we-m
 ```
 # 代理镜像加速访问（国内访问速度更快）
 ```
-docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  docker.1ms.run/rachelos/we-mp-rss:latest  docker.1ms.run/rachelos/we-mp-rss:latest
+docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  docker.1ms.run/rachelos/we-mp-rss:latest  
 ```
 
 # 感谢伙伴(排名不分先后)
@@ -67,6 +67,11 @@ docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  docker.1ms.ru
 - 支持多种抓取方式
 - 支持多种RSS客户端
 - 支持授权过期提醒
+- 支持自定义通知渠道
+- 支持自定义RSS标题、描述、封面
+- 支持自定义RSS分页大小
+- 支持导出md/docx/pdf/json格式
+- 支持API接口调用/WebHook调用
 
 
 # ❤️ 赞助

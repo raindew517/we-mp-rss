@@ -18,8 +18,7 @@ articles = [
 template = """
 {
 "articles":[{% for article in articles %}
-{{article}}
-{% if not loop.last %},{% endif %}{% endfor %}]
+{{article}}{%if not loop.last %},{% endif %}{% endfor %}]
 }
 """
 template2 = """{

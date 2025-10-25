@@ -27,7 +27,7 @@ def format_content(content:str,content_format:str='html'):
                 if 'data-pm-slice' in tag.attrs:
                   del tag.attrs['data-pm-slice']
                 if 'data-title' in tag.attrs:
-                  tag.append(tag.attrs['data-title'])
+                  # tag.append(tag.attrs['data-title'])
                   del tag.attrs['data-title']
             
                     

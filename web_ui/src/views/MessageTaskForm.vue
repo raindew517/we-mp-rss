@@ -7,6 +7,7 @@ import type { MessageTask, MessageTaskCreate } from '@/types/messageTask'
 import cronExpressionPicker from '@/components/CronExpressionPicker.vue'
 import MpMultiSelect from '@/components/MpMultiSelect.vue'
 import { Message } from '@arco-design/web-vue'
+import ACodeEditor from '@/components/ACodeEditor.vue'
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
@@ -134,21 +135,28 @@ onMounted(() => {
         
         
         <a-form-item label="消息模板" field="message_template">
-          <a-textarea
+          <a-code-editor
             v-model="formData.message_template"
             placeholder="请输入消息模板内容"
-            :auto-size="{ minRows: 4, maxRows: 8 }"
+            language="custom"
           />
           <a-button v-if="formData.message_type === 0"
             type="outline" 
             style="margin-top: 8px"
-            @click="formData.message_template = '### {{feed.mp_name}} 订阅消息：\n{% if articles %}\n{% for article in articles %}\n- [**{{ article.title }}**]({{article.url}}) ({{ article.publish_time }})\n\n{% endfor %}\n{% else %}\n- 暂无文章\n\n{% endif %}'">
+            @click="formData.message_template = '### {{feed.mp_name}} 订阅消息：\n{% if articles %}\n{% for article in articles %}\n- [**{{ article.title }}**]({{article.url}}) ({{ article.publish_time }})\n{% endfor %}\n{% else %}\n- 暂无文章\n{% endif %}'">
             使用示例消息模板
           </a-button>
           <a-button v-else
             type="outline" 
             style="margin-top: 8px"
-            @click="formData.message_template = '{\'articles\': [{% for article in articles %}{{article}}{% if not loop.last %},{% endif %}{% endfor %}]{% endfor %}]}'">
+            @click="formData.message_template = `{
+    'articles': [
+    {% for article in articles %}
+    {{article}}
+    {% if not loop.last %},{% endif %}
+    {% endfor %}
+    ]
+}`">
             
             使用示例WebHook模板
           </a-button>
