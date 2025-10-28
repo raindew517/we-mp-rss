@@ -100,7 +100,7 @@ docker run -d  --name we-mp-rss  -p 8001:8001 -v ./data:/app/data  docker.1ms.ru
 - 后端：Python + FastAPI
 - 前端：Vue 3 + Vite
 - 数据库：SQLite (默认)/MySQL
-<img src="./docs/架构原理.png" alt="架构原理" width="80%"/>
+<img src="docs/架构原理.png" alt="架构原理" width="80%"/>
 
 更多项目原理，请参考[项目文档](https://deepwiki.com/rachelos/we-mp-rss/3.5-notification-system)。
 
