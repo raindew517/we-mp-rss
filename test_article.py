@@ -139,8 +139,8 @@ def test_screenshot():
 
 async def test_Article():
     from driver.wxarticle import WXArticleFetcher
-    Web=WXArticleFetcher()
-    v=await Web.async_get_article_content("https://mp.weixin.qq.com/s/puc5q9xFmfMSy3OyqeYxZA")
+    
+    v=await WXArticleFetcher().async_get_article_content("https://mp.weixin.qq.com/s/puc5q9xFmfMSy3OyqeYxZA")
     print(v)
 
 if __name__=="__main__":
@@ -148,7 +148,7 @@ if __name__=="__main__":
     import asyncio
     # test_screenshot()
     asyncio.run(test_Article())
-    asyncio.run(test_Article())
+    # asyncio.run(test_Article())
     # test_Gather_Article()
     # testWx_Api()
     # test_fetch_articles_without_content()

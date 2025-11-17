@@ -1,11 +1,81 @@
 from core.print import print_error,print_info,print_warning
+import re
 class HtmlTools:
-     def clean_html(self, html_content: str, 
+    def remove_html_region(self, html_content: str, patterns: list) -> str:
+        """
+        使用正则表达式移除HTML中指定的区域内容
+        
+        Args:
+            html_content: 原始HTML内容
+            patterns: 正则表达式模式列表，用于匹配需要移除的区域
+            
+        Returns:
+            处理后的HTML内容
+        """
+        if not html_content or not patterns:
+            return html_content
+            
+        processed_content = html_content
+        
+        for pattern in patterns:
+            try:
+                # 使用正则表达式移除匹配的区域
+                processed_content = re.sub(pattern, '', processed_content, flags=re.DOTALL | re.IGNORECASE)
+            except re.error as e:
+                print_error(f"正则表达式错误: {pattern}, 错误信息: {e}")
+                continue
+            except Exception as e:
+                print_error(f"处理HTML区域时发生错误: {e}")
+                continue
+        
+        return processed_content
+
+    def remove_common_html_elements(self, html_content: str) -> str:
+        """
+        移除常见的HTML元素区域
+        
+        Args:
+            html_content: 原始HTML内容
+            
+        Returns:
+            处理后的HTML内容
+        """
+        if not html_content:
+            return html_content
+        
+        # 常见的需要移除的HTML元素模式
+        common_patterns = [
+            # 移除script标签及其内容
+            r'<script[^>]*>.*?</script>',
+            # 移除style标签及其内容
+            r'<style[^>]*>.*?</style>',
+            # 移除注释
+            r'<!--.*?-->',
+            # 移除iframe标签
+            # r'<iframe[^>]*>.*?</iframe>',
+            # 移除noscript标签
+            # r'<noscript[^>]*>.*?</noscript>',
+            # 移除广告相关的div（包含特定class或id）
+            # r'<div[^>]*(?:class|id)=["\'][^"\']*(?:ad|advertisement|banner)[^"\']*["\'][^>]*>.*?</div>',
+            # 移除header区域
+            # r'<header[^>]*>.*?</header>',
+            # 移除footer区域
+            # r'<footer[^>]*>.*?</footer>',
+            # 移除nav区域
+            # r'<nav[^>]*>.*?</nav>',
+            # 移除aside区域
+            # r'<aside[^>]*>.*?</aside>'
+        ]
+        return self.remove_html_region(html_content, common_patterns)
+
+    def clean_html(self, html_content: str, 
                              remove_ids: list = [], 
                              remove_classes: list = [],
                              remove_selectors: list = [],
                              remove_xpaths: list = [],
-                             remove_attributes: list = []) -> str:
+                             remove_attributes: list = [],
+                             remove_regx:list=[],
+                             remove_normal_tag:bool=False) -> str:
         """清理文章HTML内容，移除不需要的元素
         
         Args:
@@ -15,7 +85,8 @@ class HtmlTools:
             remove_selectors: 要移除的CSS选择器列表
             remove_xpaths: 要移除的XPath列表
             remove_attributes: 要移除的属性列表，格式为 [{'name': 'attr_name', 'value': 'attr_value'}] 或 [{'name': 'attr_name'}]
-            
+            remove_regx: 要移除的正则表达式列表
+            remove_normal_tag: 是否移除常见的HTML元素
         Returns:
             清理后的HTML内容
         """
@@ -52,12 +123,18 @@ class HtmlTools:
         if remove_attributes:
             cleaned_content = self.remove_elements_by_attributes(cleaned_content, remove_attributes)
         
+        # 根据正则表达式移除元素
+        if remove_regx:
+            cleaned_content=self.remove_html_region(cleaned_content,remove_regx)
+        if remove_normal_tag:
+            cleaned_content=self.remove_common_html_elements(cleaned_content)
         # 移除空文本元素（排除媒体标签）
         cleaned_content = self.remove_empty_text_elements(cleaned_content)
         
+
         return cleaned_content
 
-     def remove_elements_by_attributes(self, html_content: str, attributes: list) -> str:
+    def remove_elements_by_attributes(self, html_content: str, attributes: list) -> str:
         """根据属性移除HTML元素
         
         Args:
@@ -120,7 +197,7 @@ class HtmlTools:
             print_error(f"根据属性移除元素失败: {e}")
             return html_content
 
-     def remove_empty_text_elements(self, html_content: str) -> str:
+    def remove_empty_text_elements(self, html_content: str) -> str:
         """移除空文本元素，但排除图片等媒体标签
         
         Args:
@@ -190,7 +267,7 @@ class HtmlTools:
             return html_content
         
 
-     def _normalize_html(self, html_string: str) -> str:
+    def _normalize_html(self, html_string: str) -> str:
         """标准化HTML字符串用于比较
         
         Args:
@@ -208,7 +285,7 @@ class HtmlTools:
         normalized = re.sub(r'="([^"]*)"', '="\1"', normalized)
         return normalized
 
-     def remove_html_elements(self, html_content: str, selectors: list) -> str:
+    def remove_html_elements(self, html_content: str, selectors: list) -> str:
         """从HTML代码中移除指定的元素
         
         Args:

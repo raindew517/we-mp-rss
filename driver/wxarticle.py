@@ -253,7 +253,7 @@ class WXArticleFetcher:
                 "biz": "",
                 }
             }
-        self.controller.start_browser(mobile_mode=False,dis_image=False)
+        self.controller.start_browser(mobile_mode=False,dis_image=True)
        
         self.page = self.controller.page
         print_warning(f"Get:{url} Wait:{self.wait_timeout}")
@@ -319,7 +319,8 @@ class WXArticleFetcher:
             if content=="":
                 content_element = page.locator("#js_article")
                 content = content_element.inner_html()
-                content=self.clean_article_content(str(content))
+
+            content=self.clean_article_content(str(content))
             #获取图像资源
             images = [
                 img.get_attribute("data-src") or img.get_attribute("src")
@@ -350,7 +351,7 @@ class WXArticleFetcher:
 
         except Exception as e:
             print_error(f"文章内容获取失败: {str(e)}")
-            print_warning(f"页面内容预览: {body[:200]}...")
+            print_warning(f"页面内容预览: {body[:50]}...")
             raise e
             # 记录详细错误信息但继续执行
 
@@ -412,7 +413,9 @@ class WXArticleFetcher:
    
     def clean_article_content(self,html_content: str):
         from tools.html import htmltools
-        return htmltools.clean_html(str(html_content),
+        if not cfg.get("gather.clean_html",False):
+            return html_content
+        return htmltools.clean_html(str(html_content).strip(),
                                  remove_selectors=[
                                      "link",
                                      "head",
@@ -422,7 +425,8 @@ class WXArticleFetcher:
                                      {"name":"style","value":"display: none;"},
                                      {"name":"style","value":"display:none;"},
                                      {"name":"aria-hidden","value":"true"},
-                                 ]
+                                 ],
+                                 remove_normal_tag=True
                                  )
    
 
