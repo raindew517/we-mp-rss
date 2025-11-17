@@ -1,0 +1,10 @@
+data/
+web_ui/
+Dockerfile/
+scripts/
+compose/
+fonts/
+.vscode/
+.github/
+_pycache_/
+db.db

@@ -2,8 +2,12 @@ name: Publish Docker image to Docker Hub
 
 on:
   push:
-    branches: [ "main" ]
-    # tags: [ "v*" ]
+     branches:
+      - main
+     paths:  # 仅在指定文件变化时触发（可选）
+      - 'ReadMe.md'
+      - 'README.zh-CN.md'
+      - 'core/ver.py'
 
 env:
   REGISTRY: docker.io
@@ -43,6 +47,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
         #   tags: ${{ steps.meta.outputs.tags }}
           tags: |

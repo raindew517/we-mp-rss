@@ -16,7 +16,7 @@ if "%~1"=="-web" (
     set PUSH_FLAG=1
 ) else if "%~1"=="-m" (
     set COMMENT_FLAG=1
-    set USER_COMMENT="%~2"
+    set USER_COMMENT=%~2
     shift
 )
 shift
@@ -47,13 +47,13 @@ echo %COMMENT_FLAG%
 if %COMMENT_FLAG%==1 (
     set comment=%USER_COMMENT%
 ) else (
-    set comment=%VERSION%
+    set comment=Fix
 )
 
 echo %comment%
 git add .
-git tag -a "v%VERSION%" -m "%VERSION%"
-git commit -m "%VERSION% %comment%"
+git tag -a 'v%VERSION% -m %VERSION%'
+git commit -m '%VERSION% %comment%'
 
 REM 执行git操作
 if %PUSH_FLAG%==1 (

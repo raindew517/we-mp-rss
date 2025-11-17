@@ -1,9 +1,11 @@
+from logging import info
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.background import BackgroundTasks
 from core.auth import get_current_user
 from core.db import DB
 from core.wx import search_Biz
+from driver.wx import Wx
 from .base import success_response, error_response
 from datetime import datetime
 from core.config import cfg
@@ -11,6 +13,7 @@ from core.res import save_avatar_locally
 import io
 import os
 from jobs.article import UpdateArticle
+from driver.wxarticle import WXArticleFetcher
 router = APIRouter(prefix=f"/mps", tags=["公众号管理"])
 # import core.db as db
 # UPDB=db.Db("数据抓取")
@@ -172,8 +175,8 @@ async def get_mp_by_article(
     current_user: dict = Depends(get_current_user)
 ):
     try:
-        from driver.wxarticle import Web
-        info=Web.get_article_content(url)
+        info =await WXArticleFetcher().async_get_article_content(url)
+        
         if not info:
             raise HTTPException(
                 status_code=status.HTTP_201_CREATED,
@@ -189,7 +192,7 @@ async def get_mp_by_article(
             status_code=status.HTTP_201_CREATED,
             detail=error_response(
                 code=50001,
-                message="通过文章链接获取公众号详情"
+                message="请输入正确的公众号文章链接"
             )
         )
 

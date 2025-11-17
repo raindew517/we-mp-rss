@@ -615,22 +615,37 @@ class MarkdownToWordConverter:
                 with Image.open(converted_path) as img:
                     width, height = img.size
                     
-                # 判断图片方向并设置尺寸
-                is_landscape = width > height
+                # 计算图片的英寸尺寸（假设72 DPI）
+                width_inches = width / 72.0
+                height_inches = height / 72.0
+                
+                # 文档可用宽度约为6.5英寸（A4纸宽度减去边距）
+                # 文档可用高度约为9英寸（A4纸高度减去边距）
+                max_width = 6.5
+                max_height = 9.0
                 
                 # 添加图片到文档
                 paragraph = self.document.add_paragraph()
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 run = paragraph.add_run()
                 
-                if is_landscape:
-                    # 横图：固定宽度，高度自动调整
-                    run.add_picture(converted_path, width=Inches(6))
-                    self.logger.info(f"添加横图成功: {img_url} ({width}x{height})")
+                # 判断图片是否小于文档大小
+                if width_inches <= max_width and height_inches <= max_height:
+                    # 图片小于文档大小，使用原尺寸
+                    run.add_picture(converted_path, width=Inches(width_inches), height=Inches(height_inches))
+                    self.logger.info(f"添加原尺寸图片成功: {img_url} ({width}x{height}px, {width_inches:.2f}x{height_inches:.2f}in)")
                 else:
-                    # 竖图：固定高度，宽度自动调整
-                    run.add_picture(converted_path, height=Inches(6))
-                    self.logger.info(f"添加竖图成功: {img_url} ({width}x{height})")
+                    # 图片较大，需要缩放
+                    is_landscape = width > height
+                    
+                    if is_landscape:
+                        # 横图：固定宽度，高度自动调整
+                        run.add_picture(converted_path, width=Inches(6))
+                        self.logger.info(f"添加缩放横图成功: {img_url} ({width}x{height}px)")
+                    else:
+                        # 竖图：固定高度，宽度自动调整
+                        run.add_picture(converted_path, height=Inches(6))
+                        self.logger.info(f"添加缩放竖图成功: {img_url} ({width}x{height}px)")
                     
             except Exception as img_error:
                 self.logger.error(f"处理图片时出错: {str(img_error)}")

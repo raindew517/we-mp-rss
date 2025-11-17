@@ -1,5 +1,6 @@
 import requests
 import json
+import re
 from core.models import Feed
 from driver.wx import DoSuccess
 from core.db import DB
@@ -8,6 +9,7 @@ from .cfg import cfg,wx_cfg
 from core.print import print_error,print_info
 from core.rss import RSS
 from driver.success import setStatus
+from driver.wxarticle import Web
 import random
 # 定义一些常见的 User-Agent
 USER_AGENTS = [
@@ -48,17 +50,17 @@ class WxGather:
             return True
         self.RecordAid(aid)
         return False
-    def Model(self):
-        type=cfg.get("gather.model","web")
-        
+    def Model(self,type=None):
+        type=type or cfg.get("gather.model","web")
+        print(f"采集模式:{type}")
         if type=="app":
-            from core.wx import MpsAppMsg
+            from core.wx.model.app import MpsAppMsg
             wx=MpsAppMsg()
         elif type=="web":
-            from core.wx import MpsWeb
+            from core.wx.model.web import MpsWeb
             wx=MpsWeb()
         else:
-            from core.wx import MpsApi
+            from core.wx.model.api import MpsApi
             wx=MpsApi()
         return wx
     def __init__(self,is_add:bool=False):
@@ -106,6 +108,7 @@ class WxGather:
             r = session.get(url, headers=headers)
             if r.status_code == 200:
                 text = r.text
+                text=self.remove_common_html_elements(text)
                 if "当前环境异常，完成验证后即可继续访问" in text:
                     print_error("当前环境异常，完成验证后即可继续访问")
                     text=""
@@ -237,6 +240,11 @@ class WxGather:
         local_dt = utc_dt.astimezone()
         t=(local_dt.strftime("%Y-%m-%d %H:%M:%S"))
         return t
+
+
+    def remove_common_html_elements(self, html_content: str) -> str:
+        html_content=Web.clean_article_content(html_content)
+        return html_content
 
     # 更新公众号更新状态
     def update_mps(self,mp_id:str, mp:Feed):

@@ -1,15 +1,15 @@
 import time
 def expire(cookies:any) :
-    if not isinstance(cookies, list):
+    if not isinstance(cookies, list) and  not isinstance(cookies, dict):
         raise TypeError("cookies参数必须是列表类型")
     
     cookie_expiry=None
     for cookie in cookies:
         if not isinstance(cookie, dict):
             continue
-        if 'name' in cookie and cookie['name'] == 'slave_sid' and 'expiry' in cookie:
+        if cookie['name'] == 'slave_sid' and 'expires' in str(cookie):
                try:
-                   expiry_time = float(cookie['expiry'])
+                   expiry_time = float(cookie['expires'])
                    remaining_time = expiry_time - time.time()
                    if remaining_time > 0:
                        cookie_expiry = {

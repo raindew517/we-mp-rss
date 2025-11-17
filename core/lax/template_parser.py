@@ -61,7 +61,6 @@ class TemplateParser:
                 raise ValueError(f"Invalid context key: {key}. Keys must be valid Python identifiers")
         
         if self.compiled is None:
-            print("Compiling template...")
             self.compile_template()
             
         output = []
@@ -70,6 +69,12 @@ class TemplateParser:
             part = self.compiled[i]
             
             if part is None:
+                i += 1
+                continue
+                
+            # Handle static text (preserve original formatting)
+            if not (part.startswith('{{') or part.startswith('{%')):
+                output.append(part)
                 i += 1
                 continue
                 
@@ -146,14 +151,11 @@ class TemplateParser:
                             else_idx = j
                             break
                     
-                    # print(f"DEBUG - Control block boundaries: else={else_idx}, endif={endif_idx}")
-                    
                     # Process the appropriate block
                     if result:
                         # Process if block (from current position to else or endif)
                         end_idx = else_idx if else_idx != -1 else endif_idx
                         if_content = self.compiled[i+1:end_idx]
-                        # print(f"DEBUG - Processing if block from {i+1} to {end_idx}")
                         
                         if_parser = TemplateParser('')
                         if_parser.compiled = if_content
@@ -162,7 +164,6 @@ class TemplateParser:
                     elif else_idx != -1:
                         # Process else block
                         else_content = self.compiled[else_idx+1:endif_idx]
-                        # print(f"DEBUG - Processing else block from {else_idx+1} to {endif_idx}")
                         
                         else_parser = TemplateParser('')
                         else_parser.compiled = else_content
@@ -171,6 +172,7 @@ class TemplateParser:
                     
                     # Skip to after endif
                     i = endif_idx + 1
+                    continue
                     
                 # Handle for loop
                 elif block.startswith('for ') and ' in ' in block:
@@ -180,18 +182,28 @@ class TemplateParser:
                     # Collect loop content
                     loop_content = []
                     j = i + 1
+                    endfor_idx = j
                     while j < len(self.compiled):
                         inner_part = self.compiled[j]
                         if (isinstance(inner_part, str) and 
                             inner_part.startswith('{% endfor %}')):
+                            endfor_idx = j
                             break
                         loop_content.append(str(inner_part) if inner_part else '')
                         j += 1
                         
-                    # Render loop
-                    # print(f"DEBUG - For loop items: {items}")  # Debug
+                    # Render loop with preserved formatting and indentation
                     loop_output = []
                     total_items = len(items)
+                    
+                    # Get the indentation level from the template
+                    for_line = self.compiled[i]
+                    indent = ''
+                    if isinstance(for_line, str):
+                        indent_match = re.match(r'^(\s*)', for_line)
+                        if indent_match:
+                            indent = indent_match.group(1)
+                    
                     for item_idx, item in enumerate(items):
                         loop_context = context.copy()
                         loop_context[loop_var] = item
@@ -305,7 +317,7 @@ class TemplateParser:
                         pass
                     
                     # Skip to end of loop
-                    i = j + 1
+                    i = endfor_idx + 1
                     
                 # Handle endif/endfor
                 elif block in ('endif', 'endfor'):
@@ -418,7 +430,6 @@ class TemplateParser:
                         k not in self.custom_functions and 
                         k not in updated_context):
                         updated_context[k] = v
-                        print(f"DEBUG - Added {k} to context: {v}")
                 
                 return result, updated_context
             
@@ -497,27 +508,16 @@ class TemplateParser:
         return len(self.compiled)
 
     def _clean_output(self, output: str) -> str:
-        """Clean up the final output by removing excessive newlines and whitespace."""
+        """Clean up the final output while preserving essential formatting."""
         lines = output.split('\n')
         cleaned = []
-        prev_line_empty = False
         
         for line in lines:
-            stripped = line.strip()
-            
-            # Skip empty lines between list items
-            if not stripped and cleaned and cleaned[-1].strip().startswith('-'):
-                continue
-                
-            # Skip consecutive empty lines
-            if not stripped and prev_line_empty:
-                continue
-                
+            # Preserve all lines including empty ones that are part of the template structure
             cleaned.append(line)
-            prev_line_empty = not stripped
             
-        # Ensure exactly one newline at end
-        return '\n'.join(cleaned).strip() 
+        # Join lines while preserving original newlines and indentation
+        return '\n'.join(cleaned) 
         
     def _parse_for_block(self, block: str) -> tuple:
         """Parse a for block into loop variable and iterable parts."""

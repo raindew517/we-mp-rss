@@ -14,5 +14,5 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          token:  $ {{ secrets.TOKEN }}
+          token: ${{ secrets.GitToken }}
           # 其他可选配置，如发布说明文件、附加文件等

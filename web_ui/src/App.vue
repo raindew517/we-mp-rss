@@ -7,7 +7,6 @@
           <img :src="logo" alt="avatar" :width="60" style="margin-right:1rem;">
           <router-link to="/">{{ appTitle }}</router-link>
           <a-tooltip v-if="hasLogined" :content="!haswxLogined ? '未授权，请扫码登录' : '点我扫码授权'" position="bottom">
-
             <icon-scan @click="showAuthQrcode()" :style="{ marginLeft: '10px', cursor: 'pointer', color: !haswxLogined ? '#f00' : '#000' }"/>
           </a-tooltip>
         </div>
@@ -207,7 +206,7 @@
 import translate from 'i18n-jsautotranslate'
 import { ref,watchEffect, computed, onMounted, watch, provide } from 'vue'
 import { Modal } from '@arco-design/web-vue/es/modal'
-import {getSysInfo} from '@/api/sysinfo'
+import {getSysInfo} from '@/api/sysInfo'
 const currentLanguage = ref(localStorage.getItem('language') || 'chinese_simplified');
 
 
@@ -242,7 +241,7 @@ const userInfo = ref({
   username: '',
   avatar: ''
 })
-const haswxLogined = ref(false)
+const haswxLogined = ref(true)
 const hasLogined = ref(false)
 const isAuthenticated = computed(() => {
   hasLogined.value = !!localStorage.getItem('token')

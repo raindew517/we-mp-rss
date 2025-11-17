@@ -1,6 +1,4 @@
-from .wx1 import *
-from .wx2 import *
-from .wx3 import *
+from .model import *
 from .base import WxGather
 from driver.auth import *
 ga=WxGather()
