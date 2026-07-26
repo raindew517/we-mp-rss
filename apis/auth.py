@@ -21,6 +21,7 @@ from .ver import API_VERSION
 from .base import success_response, error_response
 from driver.base import WX_API
 from core.config import set_config, cfg
+from core.print import print_warning
 from pydantic import BaseModel
 from typing import Optional
 
@@ -428,7 +429,7 @@ async def reset_password(req: ResetPasswordRequest):
 async def switch_wechat_account(current_user: dict = Depends(get_current_user)):
     """
     切换微信公众号账号
-    
+
     用法示例：
     ```
     POST /api/v1/auth/switch
@@ -447,4 +448,57 @@ async def switch_wechat_account(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_response(code=50001, message=f"切换账号失败: {str(e)}")
+        )
+
+
+@router.post("/wechat/unbind", summary="解除微信授权")
+async def unbind_wechat(current_user: dict = Depends(get_current_user)):
+    """
+    解除当前已绑定的微信公众号授权，删除本地 token 与 Redis 缓存。
+
+    用法示例：
+    ```
+    POST /api/v1/auth/wechat/unbind
+    Authorization: Bearer {token}
+    ```
+
+    解除后下次调用 `/api/v1/auth/qr/code` 时会自动引导重新扫码授权。
+    """
+    try:
+        # 1. 清除本地 token 文件
+        from driver.token import wx_cfg
+        wx_cfg.set("token_data", {})
+        wx_cfg.save_config()
+        wx_cfg.reload()
+
+        # 2. 清除 Redis 中的 token 与登录状态（仅作用于 werss 前缀键）
+        from core.redis_client import redis_client
+        cleared_keys: list = []
+        if redis_client.is_connected:
+            try:
+                for key in redis_client._client.keys("werss:token:*"):
+                    redis_client._client.delete(key)
+                    cleared_keys.append(key.decode() if isinstance(key, bytes) else key)
+                redis_client._client.set("werss:login:status", "0")
+            except Exception as e:
+                print_warning(f"清理 Redis token 时出错: {e}")
+
+        # 3. 同步全局登录状态（内存回退）
+        from driver.success import setStatus
+        setStatus(False)
+
+        return success_response(
+            {
+                "cleared_local_token": True,
+                "cleared_redis_keys": cleared_keys,
+                "next_step": "请重新扫码授权",
+            },
+            "微信授权已解除",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_response(code=50002, message=f"解除微信授权失败: {str(e)}"),
         )
