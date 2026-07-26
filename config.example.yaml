@@ -132,7 +132,17 @@ gather:
   content_auto_interval: ${GATHER.CONTENT_AUTO_INTERVAL:-59}
   #内容修正模式，默认web 允许值 web、api
   content_mode: ${GATHER.CONTENT_MODE:-web}
-  #是否清理html标签 默认True 
+  #单篇正文抓取总超时（秒），超时会终止浏览器进程并释放文章锁
+  content_fetch_timeout: ${GATHER.CONTENT_FETCH_TIMEOUT:-60}
+  #FETCHING锁超过该时间（秒）后自动恢复；历史无时间戳锁也会恢复
+  content_fetch_stale_timeout: ${GATHER.CONTENT_FETCH_STALE_TIMEOUT:-300}
+  #每轮补抓文章数量，避免超过内容队列的总任务超时
+  content_batch_size: ${GATHER.CONTENT_BATCH_SIZE:-5}
+  #单篇正文最大失败次数
+  content_max_failures: ${GATHER.CONTENT_MAX_FAILURES:-3}
+  #首选模式失败后是否回退到另一模式；设为False可启用api-only
+  content_fallback: ${GATHER.CONTENT_FALLBACK:-True}
+  #是否清理html标签 默认True
   clean_html: ${GATHER.CLEAN_HTML:-False}
   #浏览器类型 默认firefox 允许值 firefox/edge/webkit
   browser_type: ${BROWSER_TYPE:-firefox}
