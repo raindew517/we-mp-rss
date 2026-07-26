@@ -33,6 +33,13 @@ def config_value(key, default=None):
     return values.get(key, default)
 
 
+WECHAT_SHELL = """
+<p>知道了 取消 允许</p>
+<p>微信扫一扫可打开此内容，使用完整服务</p>
+<p>视频 小程序 赞 在看 分享 留言 收藏 听过</p>
+"""
+
+
 class ContentFetchQueueTest(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -170,6 +177,88 @@ class ContentFetchQueueTest(unittest.TestCase):
         self.assertEqual(article.content, "<p>existing body</p>")
         self.assertEqual(article.has_content, 1)
         self.assertEqual(article.status, DATA_STATUS.ACTIVE)
+
+    def test_failed_refresh_does_not_preserve_wechat_shell_as_content(self):
+        article = self.add_article(
+            "shell",
+            content=WECHAT_SHELL,
+            has_content=1,
+        )
+
+        with patch.object(
+            article_content,
+            "fetch_article_content",
+            return_value=("", "api", ""),
+        ):
+            updated, _ = article_content.sync_article_content(
+                self.session,
+                article,
+                force=True,
+            )
+
+        self.assertFalse(updated)
+        self.assertEqual(article.has_content, 0)
+        self.assertEqual(article.status, DATA_STATUS.ACTIVE)
+
+    def test_wechat_shell_is_not_usable_article_content(self):
+        self.assertFalse(article_content.is_usable_article_content(WECHAT_SHELL))
+        self.assertTrue(
+            article_content.is_usable_article_content(
+                '<div id="js_content"><p>real article body</p></div>'
+            )
+        )
+
+    def test_api_fetch_extracts_only_article_container(self):
+        response_html = """
+        <html><body>
+          <div>page chrome</div>
+          <div id="js_content"><p>article body</p></div>
+        </body></html>
+        """
+        with patch(
+            "core.wx.model.api.MpsApi.content_extract",
+            return_value=response_html,
+        ):
+            content, metadata = article_content._fetch_with_api(
+                "https://example.com/article"
+            )
+
+        self.assertIn("article body", content)
+        self.assertNotIn("page chrome", content)
+        self.assertEqual(metadata, {})
+
+    def test_api_fetch_rejects_page_without_article_container(self):
+        with patch(
+            "core.wx.model.api.MpsApi.content_extract",
+            return_value="<html><body>未知错误，请稍后再试</body></html>",
+        ):
+            content, _ = article_content._fetch_with_api(
+                "https://example.com/article"
+            )
+
+        self.assertEqual(content, "")
+
+    def test_unusable_web_result_falls_back_to_api(self):
+        with (
+            patch.object(
+                article_content,
+                "_fetch_with_web",
+                return_value=(WECHAT_SHELL, {}),
+            ),
+            patch.object(
+                article_content,
+                "_fetch_with_api",
+                return_value=("<p>real article body</p>", {}),
+            ),
+        ):
+            content, mode, _ = article_content._fetch_article_content_unbounded(
+                "https://example.com/article",
+                preferred_mode="web",
+                allow_fallback=True,
+            )
+
+        self.assertEqual(content, "<p>real article body</p>")
+        self.assertEqual(mode, "api")
 
     def test_api_only_mode_does_not_fall_back_to_web(self):
         with (

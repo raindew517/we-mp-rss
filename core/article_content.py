@@ -47,6 +47,34 @@ def build_article_url(article: Any) -> str:
     return f"https://mp.weixin.qq.com/s/{origin_id}"
 
 
+def is_usable_article_content(content: str | None) -> bool:
+    """Reject WeChat error/shell pages while allowing short media articles."""
+    if not (content or "").strip():
+        return False
+
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(content, "html.parser")
+    text = soup.get_text(" ", strip=True)
+    hard_error_markers = (
+        "未知错误，请稍后再试",
+        "你暂无权限查看此页面内容",
+        "当前环境异常，完成验证后即可继续访问",
+    )
+    if any(marker in text for marker in hard_error_markers):
+        return False
+
+    has_wechat_shell = (
+        "微信扫一扫可打开此内容" in text
+        and "使用完整服务" in text
+    )
+    meaningful_length = sum(character.isalnum() for character in text)
+    if has_wechat_shell and meaningful_length < 300:
+        return False
+
+    return bool(text) or soup.find(["img", "video", "audio", "iframe"]) is not None
+
+
 def _fetch_with_web(url: str) -> Tuple[str, Any]:
     from driver.wxarticle import Web
 
@@ -56,8 +84,20 @@ def _fetch_with_web(url: str) -> Tuple[str, Any]:
 
 def _fetch_with_api(url: str) -> Tuple[str, Any]:
     from core.wx.model.api import MpsApi
+
     fetcher = MpsApi()
-    return (fetcher.content_extract(url) or "").strip(),{}
+    response_html = (fetcher.content_extract(url) or "").strip()
+    if not response_html or response_html == "DELETED":
+        return response_html, {}
+
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(response_html, "html.parser")
+    article_body = soup.select_one("#js_content") or soup.select_one("#js_article")
+    if article_body is None:
+        print_warning("api response does not contain an article body")
+        return "", {}
+    return str(article_body), {}
 
 
 def _fetch_article_content_unbounded(
@@ -71,8 +111,10 @@ def _fetch_article_content_unbounded(
         modes += [item for item in ("web", "api") if item != mode]
 
     article_type = ""
+    last_mode = mode
 
     for current_mode in modes:
+        last_mode = current_mode
         try:
             if current_mode == "api":
                 content,result = _fetch_with_api(url)
@@ -85,10 +127,12 @@ def _fetch_article_content_unbounded(
 
         if content == "DELETED":
             return content, current_mode,article_type
-        if content:
+        if is_usable_article_content(content):
             return content, current_mode,article_type
+        if content:
+            print_warning(f"ignoring unusable article content from {current_mode} mode")
 
-    return "", mode, article_type
+    return "", last_mode, article_type
 
 
 def fetch_article_content(
@@ -111,7 +155,9 @@ def fetch_article_content(
 def mark_article_fetch_failed(session, article: Any, reason: str) -> None:
     failures = int(getattr(article, "fix_fail_count", 0) or 0) + 1
     max_failures = int(cfg.get("gather.content_max_failures", 3) or 3)
-    has_existing_content = bool((getattr(article, "content", "") or "").strip())
+    has_existing_content = is_usable_article_content(
+        getattr(article, "content", "")
+    )
     article.fix_fail_count = failures
     article.has_content = 1 if has_existing_content else 0
     if hasattr(article, "fetch_started_at"):
@@ -135,7 +181,7 @@ def sync_article_content(
     force: bool = False,
 ) -> Tuple[bool, str]:
     existing_content = (getattr(article, "content", "") or "").strip()
-    if existing_content and not force:
+    if is_usable_article_content(existing_content) and not force:
         if getattr(article, "has_content", 0) == 0:
             print_info(f"article {article.id} already has content, skipping fetch")
             article.has_content = 1
