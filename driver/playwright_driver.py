@@ -130,10 +130,18 @@ class PlaywrightController:
             # 仅当通过环境变量 CHROME_EXECUTABLE_PATH 显式指定（或自动发现到本机标准安装的
             # Chromium 内核浏览器）时才启用；否则保持上游默认浏览器（默认 webkit，由 Playwright 自带），
             # 跨平台可移植，Docker/Linux 默认行为不受影响。
-            CHROME_PATH = get_chrome_executable_path()
-            if CHROME_PATH:
-                self.browser_type = "chromium"
-                print_info(f"使用本地 Chrome: {CHROME_PATH}（跳过 Playwright 浏览器下载）")
+            # 补丁：支持 BROWSER_TYPE 环境变量，用户可强制指定 webkit/chromium/firefox，
+            # 微信公众平台在 Windows 本地 Chrome 下经常触发反爬（QR 加载超时），
+            # 此时设置 BROWSER_TYPE=webkit 可绕过。
+            _forced_browser = os.environ.get("BROWSER_TYPE", "").strip().lower()
+            if _forced_browser in ("webkit", "chromium", "firefox", "msedge"):
+                self.browser_type = _forced_browser
+                print_info(f"通过 BROWSER_TYPE 强制使用浏览器: {self.browser_type}")
+            else:
+                CHROME_PATH = get_chrome_executable_path()
+                if CHROME_PATH:
+                    self.browser_type = "chromium"
+                    print_info(f"使用本地 Chrome: {CHROME_PATH}（跳过 Playwright 浏览器下载）")
 
             # 选择浏览器类型
             browser_launcher = getattr(self._playwright, self.browser_type)
