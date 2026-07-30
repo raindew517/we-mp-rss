@@ -125,6 +125,7 @@ gather:
   #是否采集内容  默认False
   content: ${GATHER.CONTENT:-False}
   #采集模式，web模式（可采集到发布链接)，api模式（可采集临时链接），app模式（采集最新消息）
+  #可选值: web | api | app | free_publish | playwright | weread | auto
   model: ${GATHER.MODEL:-web}
   #是否自动检查未采集文章内容，默认False
   content_auto_check: ${GATHER.CONTENT_AUTO_CHECK:-True}
@@ -157,6 +158,14 @@ wechat:
   # 允许切换的账号ID列表，为空表示允许所有账号，用逗号分隔
   # 例如: "account1,account2,account3" 或留空 ""
   allowed_accounts: "${WECHAT_ALLOWED_ACCOUNTS:-}"
+
+# 微信读书配置
+weread:
+  #微信读书 Cookie (从浏览器 weread.qq.com 请求中获取)
+  #需要包含: wr_vid, wr_skey, wr_gid, wr_fp 等
+  cookie: "${WEREAD_COOKIE:-}"
+  #用户vid (从 wr_vid Cookie 中提取)
+  vid: "${WEREAD_VID:-}"
 log:
   #日志文件路径，默认为空字符串，表示不输出到文件。如果要输出到文件，可以指定一个路径如：/var/log/we-mp-rss.log 如果为空就不纪录
    file: ${LOG_FILE:-}
