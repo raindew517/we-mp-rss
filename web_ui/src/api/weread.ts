@@ -6,13 +6,18 @@ export async function getWereadStatus() {
 }
 
 /** 保存微信读书 Cookie */
-export async function saveWereadCookie(cookie: string, vid?: string, name?: string) {
-    return http.post('weread/cookie', { cookie, vid, name })
+export async function saveWereadCookie(cookie?: string, vid?: string, name?: string, ticket?: string) {
+    return http.post('weread/cookie', { cookie, vid, name, ticket })
 }
 
 /** 测试连接 */
 export async function testWereadConnection() {
     return http.post('weread/test')
+}
+
+/** 测试微信读书公众号列表凭据 */
+export async function testWereadMpConnection(mpId?: string) {
+    return http.post('weread/mp/test', { mp_id: mpId || '' })
 }
 
 /** 获取书架列表 */
