@@ -125,7 +125,8 @@ gather:
   #是否采集内容  默认False
   content: ${GATHER.CONTENT:-False}
   #采集模式，web模式（可采集到发布链接)，api模式（可采集临时链接），app模式（采集最新消息）
-  #可选值: web | api | app | free_publish | playwright | weread | auto
+  #可选值: web | api | app | free_publish | playwright | weread | weread_mp | auto
+  #weread_mp 使用微信读书 Web 接口采集公众号文章，需要下方 Cookie 与 x-wr-ticket
   model: ${GATHER.MODEL:-web}
   #是否自动检查未采集文章内容，默认False
   content_auto_check: ${GATHER.CONTENT_AUTO_CHECK:-True}
@@ -150,7 +151,7 @@ proxy:
 #安全配置
 safe:
     # 需要隐藏的配置信息，用逗号分隔 如：db,secret,token等 
-    hide_config: "${SAFE_HIDE_CONFIG:-db,secret,token,notice.wechat,notice.feishu,notice.dingding}"
+    hide_config: "${SAFE_HIDE_CONFIG:-db,secret,token,weread.cookie,weread.ticket,notice.wechat,notice.feishu,notice.dingding}"
     # 授权加密KEY
     lic_key: "${SAFE_LIC_KEY:-RACHELOS}"
 # 微信账号配置
@@ -164,8 +165,15 @@ weread:
   #微信读书 Cookie (从浏览器 weread.qq.com 请求中获取)
   #需要包含: wr_vid, wr_skey, wr_gid, wr_fp 等
   cookie: "${WEREAD_COOKIE:-}"
+  #公众号文章列表请求凭据（从 /web/mp/articles 请求头复制）
+  ticket: "${WEREAD_TICKET:-}"
   #用户vid (从 wr_vid Cookie 中提取)
   vid: "${WEREAD_VID:-}"
+  #故障补抓时最多扫描的文章列表页数
+  mp_max_pages: ${WEREAD_MP_MAX_PAGES:-20}
+  #列表翻页与单篇正文请求的最小间隔（秒）
+  page_interval: ${WEREAD_PAGE_INTERVAL:-1}
+  content_interval: ${WEREAD_CONTENT_INTERVAL:-2}
 log:
   #日志文件路径，默认为空字符串，表示不输出到文件。如果要输出到文件，可以指定一个路径如：/var/log/we-mp-rss.log 如果为空就不纪录
    file: ${LOG_FILE:-}

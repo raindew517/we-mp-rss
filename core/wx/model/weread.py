@@ -48,12 +48,13 @@ class MpsWeread(WxGather):
     def __init__(self, is_add: bool = False):
         super().__init__(is_add=is_add)
         self._weread_cookies: str = ""
+        self._weread_ticket: str = ""
         self._weread_vid: str = ""
         self._weread_name: str = ""
 
     def _load_weread_auth(self):
         """加载微信读书的 Cookie"""
-        from core.config import Config
+        from core.config import Config, cfg as app_cfg
         import os
 
         lic_path = "./data/wx.lic"
@@ -70,8 +71,9 @@ class MpsWeread(WxGather):
             except Exception:
                 weread_data = {}
 
-        self._weread_cookies = weread_data.get("cookie", "")
-        self._weread_vid = weread_data.get("vid", "")
+        self._weread_cookies = app_cfg.get("weread.cookie", "") or weread_data.get("cookie", "")
+        self._weread_ticket = app_cfg.get("weread.ticket", "") or weread_data.get("ticket", "")
+        self._weread_vid = app_cfg.get("weread.vid", "") or weread_data.get("vid", "")
         self._weread_name = weread_data.get("name", "")
 
     def _weread_get(self, url: str, params: dict = None) -> Optional[dict]:

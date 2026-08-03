@@ -8,10 +8,13 @@
         正在测试连接...
       </a-alert>
       <a-alert v-else-if="connectionStatus === 'success'" type="success">
-        连接成功！书架共 {{ bookCount }} 本书，用户 VID: {{ vid }}
+        连接成功！书架共 {{ bookCount }} 本书，用户 VID: {{ vid }}<span v-if="hasTicket">；公众号采集凭据已验证</span>
       </a-alert>
       <a-alert v-else-if="connectionStatus === 'error'" type="error">
         连接失败：{{ errorMsg }}
+      </a-alert>
+      <a-alert v-if="managedByConfig" type="warning" style="margin-top: 12px">
+        部分凭据由 config.yaml 或环境变量管理，页面不会覆盖这些值。
       </a-alert>
 
       <a-form :model="cookieForm" layout="vertical" style="margin-top: 16px">
@@ -21,6 +24,15 @@
             placeholder="粘贴完整的 Cookie 字符串，需包含 wr_vid、wr_skey 等关键字段"
             :auto-size="{ minRows: 3, maxRows: 6 }"
             allow-clear
+            :disabled="cookieManagedByConfig"
+          />
+        </a-form-item>
+        <a-form-item label="x-wr-ticket（公众号采集）" field="ticket" extra="仅 weread_mp 模式需要：从 /web/mp/articles 请求的 Request Headers 复制">
+          <a-input-password
+            v-model="cookieForm.ticket"
+            placeholder="粘贴 x-wr-ticket；只采集书籍笔记时可留空"
+            allow-clear
+            :disabled="ticketManagedByConfig"
           />
         </a-form-item>
         <a-form-item label="用户名称（可选）" field="name">
@@ -35,7 +47,7 @@
             <template #icon><icon-check-circle /></template>
             测试连接
           </a-button>
-          <a-button status="danger" @click="clearCookie" :disabled="!hasConfig">
+          <a-button status="danger" @click="clearCookieHandler" :disabled="!hasConfig || managedByConfig">
             <template #icon><icon-delete /></template>
             清除 Cookie
           </a-button>
@@ -115,6 +127,7 @@ import {
   getWereadStatus,
   saveWereadCookie,
   testWereadConnection,
+  testWereadMpConnection,
   getWereadBookshelf,
   collectWereadNotes,
   clearWereadCookie,
@@ -128,6 +141,10 @@ const errorMsg = ref('')
 const saving = ref(false)
 const testing = ref(false)
 const hasConfig = ref(false)
+const hasTicket = ref(false)
+const managedByConfig = ref(false)
+const cookieManagedByConfig = ref(false)
+const ticketManagedByConfig = ref(false)
 const loadingBookshelf = ref(false)
 const collectingBookId = ref('')
 const collectingAll = ref(false)
@@ -136,6 +153,7 @@ const collectModalVisible = ref(false)
 // 表单
 const cookieForm = reactive({
   cookie: '',
+  ticket: '',
   name: '',
 })
 
@@ -167,6 +185,10 @@ async function loadStatus() {
   try {
     const data = await getWereadStatus() as any
     hasConfig.value = data.configured
+    hasTicket.value = data.has_ticket
+    managedByConfig.value = data.managed_by_config
+    cookieManagedByConfig.value = data.cookie_managed_by_config
+    ticketManagedByConfig.value = data.ticket_managed_by_config
     if (data.vid) {
       vid.value = data.vid
       cookieForm.name = data.name || ''
@@ -174,21 +196,32 @@ async function loadStatus() {
     if (data.has_cookie) {
       cookieForm.cookie = '' // 不直接展示完整 Cookie，但显示有值
     }
+    if (data.has_ticket) {
+      cookieForm.ticket = ''
+    }
   } catch (e) {
     // 忽略
   }
 }
 
 async function saveCookie() {
-  if (!cookieForm.cookie.trim()) {
-    Message.warning('请填写 Cookie')
+  if (!cookieForm.cookie.trim() && !hasConfig.value) {
+    Message.warning('首次配置请填写 Cookie')
     return
   }
   saving.value = true
   try {
-    await saveWereadCookie(cookieForm.cookie, '', cookieForm.name)
-    Message.success('Cookie 保存成功')
+    await saveWereadCookie(
+      cookieForm.cookie || undefined,
+      '',
+      cookieForm.name,
+      cookieForm.ticket || undefined,
+    )
+    Message.success('微信读书凭据保存成功')
     hasConfig.value = true
+    if (cookieForm.ticket || ticketManagedByConfig.value) {
+      hasTicket.value = true
+    }
     await testConnection()
   } catch (e: any) {
     Message.error(e?.message || '保存失败')
@@ -202,6 +235,9 @@ async function testConnection() {
   connectionStatus.value = 'loading'
   try {
     const result = await testWereadConnection() as any
+    if (hasTicket.value) {
+      await testWereadMpConnection()
+    }
     connectionStatus.value = 'success'
     bookCount.value = result.book_count
     vid.value = result.vid
@@ -231,6 +267,7 @@ async function clearCookieHandler() {
     await clearWereadCookie()
     Message.success('Cookie 已清除')
     hasConfig.value = false
+    hasTicket.value = false
     connectionStatus.value = 'idle'
     bookshelf.value = []
     bookCount.value = 0
