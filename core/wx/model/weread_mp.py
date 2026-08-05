@@ -128,13 +128,9 @@ class MpsWereadMP(MpsWeread):
             "Accept-Language": "zh-CN,zh;q=0.9",
             "Referer": "https://weread.qq.com/",
         }
-        if include_ticket:
-            if not self._weread_ticket:
-                raise WereadMPAPIError(
-                    "missing_ticket",
-                    "WEREAD_TICKET is required for the article list endpoint",
-                    retriable=False,
-                )
+        if include_ticket and self._weread_ticket:
+            # 新版微信读书已弃用 x-wr-ticket，仅需有效 Cookie 即可拉取文章列表；
+            # 保留旧逻辑以便兼容旧版微信读书。无 ticket 时不拦截请求。
             headers["x-wr-ticket"] = self._weread_ticket
         return headers
 

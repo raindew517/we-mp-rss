@@ -1,0 +1,1 @@
+import{v as e}from"./http-m0RLmi3L.js";export{e as getArticles};

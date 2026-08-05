@@ -193,11 +193,12 @@ async function loadStatus() {
       vid.value = data.vid
       cookieForm.name = data.name || ''
     }
+    // 回显已保存的凭据到输入框，便于查看/编辑（后端已按用户要求返回完整值）
     if (data.has_cookie) {
-      cookieForm.cookie = '' // 不直接展示完整 Cookie，但显示有值
+      cookieForm.cookie = data.cookie || ''
     }
     if (data.has_ticket) {
-      cookieForm.ticket = ''
+      cookieForm.ticket = data.ticket || ''
     }
   } catch (e) {
     // 忽略

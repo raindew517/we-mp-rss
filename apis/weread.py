@@ -85,6 +85,8 @@ async def get_weread_status(current_user=Depends(get_current_user_or_ak)):
         "configured": has_cookie,
         "cookie_masked": cookie[:20] + "..." if cookie else "",
         "ticket_masked": ticket[:12] + "..." if ticket else "",
+        "cookie": cookie,          # 完整 Cookie（供管理页回显，自托管单用户场景）
+        "ticket": ticket,          # 完整 x-wr-ticket（如有）
         "has_cookie": bool(cookie),
         "has_ticket": bool(ticket),
         "mp_configured": bool(cookie and ticket),
