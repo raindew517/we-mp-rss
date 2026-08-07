@@ -14,6 +14,15 @@ export async function saveWereadCookie(cookie?: string, vid?: string, name?: str
     return http.post('/wx/weread/cookie', { cookie, vid, name, ticket })
 }
 
+/** 保存 Cookie 自动刷新配置（公众号文章 URL + 本机浏览器路径） */
+export async function saveWereadConfig(params: {
+    cookie_refresh_url?: string
+    browser_path?: string
+    browser_type?: string
+}) {
+    return http.post('/wx/weread/config', params)
+}
+
 /** 测试连接 */
 export async function testWereadConnection() {
     return http.post('/wx/weread/test')

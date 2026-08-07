@@ -24,6 +24,13 @@ class WereadCookieRequest(BaseModel):
     name: Optional[str] = ""
 
 
+class WereadConfigRequest(BaseModel):
+    """微信读书 Cookie 自动刷新配置（用于定时任务前自动更新 Cookie）"""
+    cookie_refresh_url: Optional[str] = ""
+    browser_path: Optional[str] = ""
+    browser_type: Optional[str] = "chrome"
+
+
 class WereadCollectRequest(BaseModel):
     mp_id: str
     mp_name: Optional[str] = ""
@@ -95,6 +102,9 @@ async def get_weread_status(current_user=Depends(get_current_user_or_ak)):
         "ticket_managed_by_config": bool(config_ticket),
         "vid": vid,
         "name": name,
+        "cookie_refresh_url": data.get("cookie_refresh_url", ""),
+        "browser_path": data.get("browser_path", ""),
+        "browser_type": data.get("browser_type", "chrome"),
     })
 
 
@@ -147,6 +157,24 @@ async def save_weread_cookie(
         "vid": vid,
         "name": data.get("name", ""),
     }, "Cookie 保存成功")
+
+
+@router.post("/config", summary="保存微信读书 Cookie 自动刷新配置")
+async def save_weread_config(
+    req: WereadConfigRequest,
+    current_user=Depends(get_current_user_or_ak),
+):
+    """
+    保存 Cookie 自动刷新的浏览器/URL 配置。
+    这些不是敏感凭据，由项目内的刷新脚本（core/weread_cookie_refresh.py）
+    读取后调用本机 Chrome 打开 URL 提取最新 Cookie。
+    """
+    data = _load_weread_data()
+    data["cookie_refresh_url"] = (req.cookie_refresh_url or "").strip()
+    data["browser_path"] = (req.browser_path or "").strip()
+    data["browser_type"] = (req.browser_type or "chrome").strip() or "chrome"
+    _save_weread_data(data)
+    return success_response(message="自动刷新配置已保存")
 
 
 @router.post("/test", summary="测试微信读书连接")
