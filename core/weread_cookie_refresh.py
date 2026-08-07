@@ -1,12 +1,14 @@
-"""微信读书 Cookie 自动刷新。
+"""微信读书 Cookie 刷新（全部在宿主机执行，容器只消费结果）。
 
-设计为「消息任务运行时的前置步骤」：在 jobs/mps.add_job() 同步文章之前无头调用，
-复用数据卷中已登录的持久化 profile 自动刷新 Cookie 写回 wx.lic，使随后同步使用最新
-凭据；若登录态过期（无头拿不到有效 Cookie），则沿用已有 Cookie 同步，由同步日志的
--2012 提示用户去本机重新扫码。
+架构：微信读书登录态 profile 由 macOS 钥匙串加密，容器内 Linux Chromium 解密不了，
+因此**所有浏览器操作（首次扫码 + 每日自动刷新）都在宿主机用本机 Chrome 完成**，
+刷新成功后把明文 Cookie 写回数据卷的 wx.lic；容器（jobs/mps.add_job）只读取 wx.lic
+的 Cookie 同步文章，不在容器内启动浏览器。
+
+调用方：scripts/refresh_weread_cookie.py（GUI 扫码 / --headless 每日自动，由 launchd 触发）。
 
 流程：
-1. 用 Playwright Chromium 打开配置的公众号主页 URL（reader 页，形如
+1. 用本机 Chrome（Playwright 驱动）打开配置的公众号主页 URL（reader 页，形如
    https://weread.qq.com/web/mp/reader/xxxx，**不要配成带 bookId 的 /web/mp/articles
    接口地址**——接口地址会被重定向且不是给人看的页面）；
 2. 主页内部会发出 /web/mp/articles 请求，从该请求头提取最新 Cookie（回退
@@ -17,8 +19,9 @@
 注意：
 - 直接读写 wx.lic（WEREAD_LIC_PATH 指定，默认 ./data/wx.lic）。
 - 持久化 profile 目录由 WEREAD_PROFILE_DIR 指定，默认 ~/.cache/we-mp-rss/weread-chrome-profile；
-  容器内部署应指向数据卷（与宿主扫码脚本共用同一物理目录），首次扫码后登录态持久化。
-- 容器内调用传 headless_only=True + force_bundled=True（无 GUI 且用自带 Chromium）。
+  应与容器挂载的数据卷指向同一物理目录（如 /Users/yangqing/wechat-rss-data/weread-chrome-profile），
+  由本机 Chrome 持有登录态，宿主刷新时复用。
+- 宿主机调用一般不传 force_bundled（使用 wx.lic 中配置的 browser_path 指向的本机 Chrome）。
 """
 import os
 import json
@@ -76,6 +79,63 @@ def extract_vid(cookie: str) -> str:
         if item.startswith("wr_vid="):
             return item[len("wr_vid="):].strip()
     return ""
+
+
+def _dedupe_cookie(cookie: str) -> str:
+    """去掉重复键（浏览器注入种子后再回抓可能产生重复 wr_vid/wr_skey 等），保留首次出现。
+
+    重复键会导致服务端取到第一个（可能是过期）值，故保存与注入前都需去重。
+    """
+    kept = {}
+    for item in (cookie or "").split(";"):
+        item = item.strip()
+        if "=" in item:
+            k, _, v = item.partition("=")
+            k = k.strip()
+            if k and k not in kept:
+                kept[k] = f"{k}={v.strip()}"
+    return "; ".join(kept.values())
+
+
+def _verify_cookie(cookie: str) -> bool:
+    """实打实请求一次 weread MP 接口，确认 Cookie 真能拉到数据。
+
+    仅检查 'wr_vid=' 不够：过期 Cookie 同样带 wr_vid，服务端会以 -2012/-2041 等拒绝。
+    故刷新后必须用真实接口验证，避免把过期 Cookie 误判为有效（假阳性）。
+    判定标准：响应 JSON 含非零 errCode（如 -2012 登录超时、-2041 等）即视为无效。
+    无 requests 时退化为 True（不阻断），但宿主机场景应装有 requests。
+    """
+    try:
+        import requests
+    except ImportError:
+        return True
+    try:
+        r = requests.get(
+            "https://weread.qq.com/web/mp/articles",
+            params={"bookId": "MP_WXS_3528995129", "offset": 0},
+            headers={
+                "Cookie": cookie,
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Referer": "https://weread.qq.com/",
+            },
+            timeout=30,
+        )
+        try:
+            j = r.json()
+        except Exception:
+            return False
+        if isinstance(j, dict):
+            code = j.get("errCode", j.get("errcode", 0))
+            if code:  # 任何非零 errCode 均表示无效（含 -2012/-2041 等）
+                return False
+            # 有实际数据字段才视为有效
+            if "reviews" in j or "articles" in j or "synckey" in j or j.get("bookId"):
+                return True
+        return False
+    except Exception:
+        return False
 
 
 def _extract_cookie_from_page(page, context, url: str) -> str:
@@ -150,13 +210,44 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
         )
 
     def _try(headless: bool, wait_login: bool = False, timeout_s: int = 300,
-             force_bundled: bool = False) -> str:
-        """打开页面并提取 Cookie；wait_login=True 时若未登录，保持窗口等待用户扫码。"""
+             force_bundled: bool = False, seed_cookie: str = "") -> str:
+        """打开页面并提取 Cookie；wait_login=True 时若未登录，保持窗口等待用户扫码。
+
+        seed_cookie: wx.lic 中已有的 Cookie，作为登录态种子注入上下文。
+        解决宿主(macOS Chrome)/容器(Linux Chromium) profile cookie 加密不互通的问题：
+        容器无头刷新无法解密宿主写入的 profile cookie，故改以 wx.lic 的 Cookie 为可信源。
+        """
         with sync_playwright() as p:
             context = _launch(p, headless=headless, force_bundled=force_bundled)
             page = context.new_page()
+            # 注入种子 Cookie（来源：wx.lic，先去重避免重复键）。即便 profile 跨平台
+            # 无法复用也能复用登录态；若种子本身已过期，则必须扫码重建有效 session。
+            seed_cookie = _dedupe_cookie(seed_cookie)
+            if seed_cookie:
+                try:
+                    cookies = []
+                    for item in seed_cookie.split(";"):
+                        item = item.strip()
+                        if "=" in item:
+                            name, _, value = item.partition("=")
+                            name = name.strip()
+                            value = value.strip()
+                            if name and value:
+                                cookies.append({
+                                    "name": name,
+                                    "value": value,
+                                    "url": "https://weread.qq.com",
+                                })
+                    if cookies:
+                        context.add_cookies(cookies)
+                        if verbose:
+                            print(f"[refresh] 已注入 wx.lic 种子 Cookie（{len(cookies)} 项）")
+                except Exception as e:
+                    if verbose:
+                        print(f"[refresh] 注入种子 Cookie 失败（不影响）: {e}")
             try:
                 cookie = _extract_cookie_from_page(page, context, url)
+                cookie = _dedupe_cookie(cookie)
                 if not cookie and wait_login:
                     # 保持可见窗口，轮询等待用户扫码登录（登录态持久化到 profile_dir）
                     deadline = time.time() + timeout_s
@@ -175,26 +266,31 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
                 context.close()
 
     # 1) 常规无头刷新：登录态持久化，通常直接拿到有效 Cookie
-    cookie = _try(headless=True, force_bundled=force_bundled)
-    if cookie and "wr_vid=" in cookie:
+    #    注入 wx.lic 已有 Cookie 作为种子（跨平台 profile 不互通时的可信回退）
+    seed_cookie = (data.get("cookie") or "").strip()
+    cookie = _try(headless=True, force_bundled=force_bundled, seed_cookie=seed_cookie)
+    # 必须实打实验证 Cookie 真能拉到数据，避免把过期 Cookie 误判为有效（假阳性）
+    if cookie and "wr_vid=" in cookie and _verify_cookie(cookie):
         vid = extract_vid(cookie)
         _save_cookie(cookie, name=data.get("name", ""))
         if verbose:
             print(f"[refresh] Cookie 已自动更新 (vid={vid})")
         return True
 
-    # 2) 未拿到有效 Cookie
+    # 2) 未拿到有效 Cookie（或拿到但验证失败＝过期）
     if headless_only:
         if verbose:
-            print("[refresh] 无头刷新未获取到有效 Cookie（登录态可能已过期），将沿用已有 Cookie 进行同步")
+            print("[refresh] Cookie 无效/已过期（接口返回 -2012）。无头模式不弹窗，"
+                  "请在本机运行 'python scripts/refresh_weread_cookie.py' 扫码登录后刷新")
         return False
 
     # 3) 弹可见窗口，提示扫码登录，等待登录后更新
     if verbose:
         print("[refresh] 未获取到有效 Cookie，已打开浏览器窗口，请扫码登录微信读书…")
         print("[refresh] 等待登录（最长 5 分钟），登录成功后自动保存 Cookie…")
-    cookie = _try(headless=False, wait_login=True, timeout_s=300, force_bundled=force_bundled)
-    if cookie and "wr_vid=" in cookie:
+    cookie = _try(headless=False, wait_login=True, timeout_s=300,
+                 force_bundled=force_bundled, seed_cookie=seed_cookie)
+    if cookie and "wr_vid=" in cookie and _verify_cookie(cookie):
         vid = extract_vid(cookie)
         _save_cookie(cookie, name=data.get("name", ""))
         if verbose:
@@ -202,7 +298,7 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
         return True
 
     if verbose:
-        print("[refresh] 等待扫码超时或未获取到有效 Cookie，请检查微信读书登录状态")
+        print("[refresh] 等待扫码超时或 Cookie 仍无效，请检查微信读书登录状态")
     return False
 
 

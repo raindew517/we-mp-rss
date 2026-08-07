@@ -207,43 +207,12 @@ class MessageTaskTracker:
             return self._tasks.get(task_id, {})
 
 tracker = MessageTaskTracker()
-import threading
-
-def _refresh_cookie_pre_step():
-    """同步前的 Cookie 刷新前置步骤（无头、复用数据卷已登录 profile）。
-
-    失败不影响同步：无头拿不到有效 Cookie 时沿用已有 Cookie，由同步日志的 -2012
-    提示用户去本机重新扫码。
-
-    注意：消息任务运行在 asyncio 事件循环线程内，而 refresh_weread_cookie 内部使用
-    Playwright 同步 API（sync_playwright），在事件循环线程直接调用会抛
-    "Sync API inside the asyncio loop" 异常。因此把刷新整体丢到独立线程执行，
-    避免与 asyncio 事件循环冲突。
-    """
-
-    def _do_refresh():
-        try:
-            from core.weread_cookie_refresh import refresh_weread_cookie
-        except Exception as e:
-            print_warning(f"Cookie 刷新前置步骤导入失败（不影响同步）: {e}")
-            return
-        try:
-            ok = refresh_weread_cookie(
-                verbose=True, headless_only=True, force_bundled=True, cooldown_hours=6
-            )
-            print(f"Cookie 刷新前置步骤: {'已完成' if ok else '跳过（沿用已有 Cookie 同步）'}")
-        except Exception as e:
-            print_warning(f"Cookie 刷新前置步骤异常（不影响同步）: {e}")
-
-    t = threading.Thread(target=_do_refresh, name="weread-cookie-refresh", daemon=True)
-    t.start()
-    t.join(timeout=600)
 
 
 def add_job(feeds:list[Feed]=None,task:MessageTask=None,isTest=False):
-    # 前置：同步文章前先尝试无头刷新微信读书 Cookie（复用数据卷已登录 profile）
-    _refresh_cookie_pre_step()
-
+    # 微信读书 Cookie 刷新已移至宿主机完成（见 scripts/refresh_weread_cookie.py + launchd 模板），
+    # 容器不在内部启动浏览器刷新——因为 profile 由 macOS 钥匙串加密，容器内 Linux Chromium
+    # 无法解密宿主机写入的登录态。容器只读取 wx.lic 中的明文 Cookie 进行同步即可。
     if isTest:
         TaskQueue.clear_queue()
 
