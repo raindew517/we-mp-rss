@@ -187,9 +187,14 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
         last_ts = data.get("cookie_refresh_last_ts") or 0
         has_cookie = bool((data.get("cookie") or "").strip())
         if has_cookie and last_ts and (time.time() - float(last_ts)) < cooldown_hours * 3600:
+            # 冷却期内：只有经真实接口验证 Cookie 仍有效才跳过刷新；
+            # 否则（已过期 / 旧时间戳是假阳性）必须强制刷新，不能被旧时间戳卡住。
+            if _verify_cookie((data.get("cookie") or "").strip()):
+                if verbose:
+                    print(f"[refresh] Cookie 在冷却期内（{cooldown_hours:g}h）且仍有效，跳过刷新")
+                return True
             if verbose:
-                print(f"[refresh] Cookie 在冷却期内（{cooldown_hours:g}h），跳过刷新")
-            return True
+                print("[refresh] Cookie 在冷却期内但已失效，强制刷新")
 
     try:
         from playwright.sync_api import sync_playwright
@@ -220,6 +225,14 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
         with sync_playwright() as p:
             context = _launch(p, headless=headless, force_bundled=force_bundled)
             page = context.new_page()
+            # 扫码模式下绝不注入种子 Cookie：过期 Cookie 会让页面停在“已登录但失效”的
+            # 状态，既出不来二维码，也会让下面的等待逻辑误判为“已拿到 Cookie”而直接退出。
+            if wait_login:
+                seed_cookie = ""
+                try:
+                    context.clear_cookies()
+                except Exception:
+                    pass
             # 注入种子 Cookie（来源：wx.lic，先去重避免重复键）。即便 profile 跨平台
             # 无法复用也能复用登录态；若种子本身已过期，则必须扫码重建有效 session。
             seed_cookie = _dedupe_cookie(seed_cookie)
@@ -248,19 +261,33 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
             try:
                 cookie = _extract_cookie_from_page(page, context, url)
                 cookie = _dedupe_cookie(cookie)
-                if not cookie and wait_login:
-                    # 保持可见窗口，轮询等待用户扫码登录（登录态持久化到 profile_dir）
+                if wait_login:
+                    # 扫码模式：只有“验证真实有效”的 Cookie 才算数；否则保持可见窗口，
+                    # 轮询等待用户扫码登录（登录态持久化到 profile_dir）。
+                    if cookie and _verify_cookie(cookie):
+                        return cookie
+                    # 确保窗口停在可扫码的登录入口（reader 页未登录时可能是报错页）
+                    try:
+                        page.goto("https://weread.qq.com/", wait_until="domcontentloaded",
+                                  timeout=30000)
+                    except Exception:
+                        pass
+                    if verbose:
+                        print("[refresh] 请在弹出的 Chrome 窗口中用微信扫码登录微信读书…")
                     deadline = time.time() + timeout_s
                     while time.time() < deadline:
                         try:
                             cookies = context.cookies("https://weread.qq.com")
-                            ck = "; ".join(f"{c['name']}={c['value']}" for c in cookies)
+                            ck = _dedupe_cookie(
+                                "; ".join(f"{c['name']}={c['value']}" for c in cookies))
                         except Exception:
                             ck = ""
-                        if "wr_vid=" in ck:
+                        if "wr_vid=" in ck and _verify_cookie(ck):
                             cookie = ck
                             break
-                        time.sleep(2)
+                        time.sleep(3)
+                    else:
+                        cookie = ""
                 return cookie
             finally:
                 context.close()
@@ -287,8 +314,8 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
     # 3) 弹可见窗口，提示扫码登录，等待登录后更新
     if verbose:
         print("[refresh] 未获取到有效 Cookie，已打开浏览器窗口，请扫码登录微信读书…")
-        print("[refresh] 等待登录（最长 5 分钟），登录成功后自动保存 Cookie…")
-    cookie = _try(headless=False, wait_login=True, timeout_s=300,
+        print("[refresh] 等待登录（最长 10 分钟），登录成功后自动保存 Cookie…")
+    cookie = _try(headless=False, wait_login=True, timeout_s=600,
                  force_bundled=force_bundled, seed_cookie=seed_cookie)
     if cookie and "wr_vid=" in cookie and _verify_cookie(cookie):
         vid = extract_vid(cookie)
@@ -300,6 +327,58 @@ def refresh_weread_cookie(verbose: bool = True, headless_only: bool = False,
     if verbose:
         print("[refresh] 等待扫码超时或 Cookie 仍无效，请检查微信读书登录状态")
     return False
+
+
+def request_host_refresh(timeout_s: int = 180) -> dict:
+    """容器内调用宿主机刷新代理（**不在容器内启动浏览器**）。
+
+    浏览器刷新动作由宿主机代理完成（macOS 钥匙串加密的 profile 容器内解不开）。
+    容器内只负责：在同步文章前，发现/怀疑 Cookie 过期时，请宿主机代理去刷新，
+    代理把最新明文 Cookie 写回数据卷 wx.lic，容器随后读取它同步文章。
+
+    可通过环境变量 ``WEREAD_REFRESH_AGENT_URL`` 配置代理地址
+    （默认 http://host.docker.internal:9876/refresh）。
+
+    返回: ``{"triggered": bool, "ok": bool, "needs_scan": bool, "message": str}``
+      - triggered=False 表示未配置代理（手动模式，跳过自动刷新，不报错）；
+      - ok=False 且 needs_scan=True 表示登录态过期需扫码，调用方应中止任务并提示用户；
+      - ok=False 且 needs_scan=False 表示代理调用本身失败（网络/代理未启动等）。
+    """
+    import urllib.request
+
+    agent_url = (os.environ.get("WEREAD_REFRESH_AGENT_URL") or "").strip()
+    if not agent_url:
+        # 未配置代理：保持向后兼容，不强制刷新（手动模式）
+        return {
+            "triggered": False,
+            "ok": True,
+            "needs_scan": False,
+            "message": "未配置 WEREAD_REFRESH_AGENT_URL，跳过自动刷新（手动模式）",
+        }
+    if not agent_url.endswith("/refresh"):
+        agent_url = agent_url.rstrip("/") + "/refresh"
+    try:
+        req = urllib.request.Request(
+            agent_url,
+            data=b"{}",
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        return {
+            "triggered": True,
+            "ok": bool(payload.get("ok")),
+            "needs_scan": bool(payload.get("needs_scan")),
+            "message": payload.get("message", ""),
+        }
+    except Exception as e:
+        return {
+            "triggered": True,
+            "ok": False,
+            "needs_scan": False,
+            "message": f"调用宿主机刷新代理失败: {e}",
+        }
 
 
 if __name__ == "__main__":

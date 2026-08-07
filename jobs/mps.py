@@ -216,6 +216,26 @@ def add_job(feeds:list[Feed]=None,task:MessageTask=None,isTest=False):
     if isTest:
         TaskQueue.clear_queue()
 
+    # 微信读书模式：在「执行 / 定时任务」真正同步文章前，若 Cookie 过期则自动
+    # 请宿主机刷新代理去刷新（容器不跑浏览器，见 scripts/host_weread_refresh_agent.py）。
+    # 这样用户无需手动敲命令——点执行或定时触发时即自动保活 Cookie。
+    if not isTest and (cfg.get("gather.model") or "web") == "weread_mp":
+        try:
+            from core.weread_cookie_refresh import request_host_refresh
+            res = request_host_refresh()
+            if res.get("triggered") and not res.get("ok"):
+                # 刷新失败（多为登录态过期需扫码）→ 中止本次任务并给出明确提示
+                msg = res.get("message") or "Cookie 刷新失败"
+                print_error(f"[cookie] 自动刷新失败: {msg}")
+                raise RuntimeError(f"微信读书 Cookie 自动刷新失败：{msg}")
+            if res.get("triggered"):
+                print_info(f"[cookie] 自动刷新: {res.get('message')}")
+        except RuntimeError:
+            raise
+        except Exception as e:
+            # 代理调用异常等：不阻断同步（可能 Cookie 仍有效），仅告警
+            print_warning(f"[cookie] 自动刷新异常（继续执行）: {e}")
+
     # 动态获取公众号列表：如果 feeds 为 None 且 task 不为 None，则动态获取
     if feeds is None and task is not None:
         feeds = get_feeds(task)
