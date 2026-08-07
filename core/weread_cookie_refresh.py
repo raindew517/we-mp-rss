@@ -62,9 +62,16 @@ def _load_weread_data(lic_path: str = DEFAULT_LIC_PATH):
 
 
 def _save_cookie(cookie: str, name: str = "", lic_path: str = DEFAULT_LIC_PATH):
-    """把最新 cookie 写回 wx.lic 的 weread_data（保留文档其他部分）。"""
+    """把最新 cookie 写回 wx.lic 的 weread_data（保留文档其他部分）。
+
+    同时同步 vid 字段：配置页与 /weread 状态接口用 weread_data.vid 判断是否已配置，
+    若只更新 cookie 而不更新 vid，换账号扫码后会残留上一个账号的 vid。
+    """
     doc, data = _load_weread_data(lic_path)
     data["cookie"] = cookie
+    vid = extract_vid(cookie)
+    if vid:
+        data["vid"] = vid
     if name:
         data["name"] = name
     data["cookie_refresh_last_ts"] = time.time()
