@@ -38,6 +38,13 @@
         <a-form-item label="用户名称（可选）" field="name">
           <a-input v-model="cookieForm.name" placeholder="如：张三" />
         </a-form-item>
+        <a-divider style="margin: 8px 0">自动刷新 Cookie（可选，定时任务前自动更新）</a-divider>
+        <a-form-item label="公众号主页 URL" field="cookie_refresh_url" extra="用于自动刷新 Cookie。请填公众号主页（reader 页，形如 https://weread.qq.com/web/mp/reader/xxxx），不要填带 bookId 的 /web/mp/articles 接口地址">
+          <a-input v-model="cookieForm.cookie_refresh_url" placeholder="https://weread.qq.com/web/mp/reader/MP_WXS_xxx" />
+        </a-form-item>
+        <a-form-item label="浏览器路径（本机 Chrome）" field="browser_path" extra="本机 Chrome 可执行文件路径，用于打开上方 URL 提取 Cookie；留空则用 Playwright 自带 Chromium">
+          <a-input v-model="cookieForm.browser_path" placeholder="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" />
+        </a-form-item>
         <a-space>
           <a-button type="primary" @click="saveCookie" :loading="saving">
             <template #icon><icon-save /></template>
@@ -50,6 +57,10 @@
           <a-button status="danger" @click="clearCookieHandler" :disabled="!hasConfig || managedByConfig">
             <template #icon><icon-delete /></template>
             清除 Cookie
+          </a-button>
+          <a-button @click="saveConfig" :loading="savingConfig">
+            <template #icon><icon-settings /></template>
+            保存刷新配置
           </a-button>
         </a-space>
       </a-form>
@@ -126,6 +137,7 @@ import { Message } from '@arco-design/web-vue'
 import {
   getWereadStatus,
   saveWereadCookie,
+  saveWereadConfig,
   testWereadConnection,
   testWereadMpConnection,
   getWereadBookshelf,
@@ -139,6 +151,7 @@ const bookCount = ref(0)
 const vid = ref('')
 const errorMsg = ref('')
 const saving = ref(false)
+const savingConfig = ref(false)
 const testing = ref(false)
 const hasConfig = ref(false)
 const hasTicket = ref(false)
@@ -155,6 +168,9 @@ const cookieForm = reactive({
   cookie: '',
   ticket: '',
   name: '',
+  cookie_refresh_url: '',
+  browser_path: '',
+  browser_type: 'chrome',
 })
 
 // 书架
@@ -193,12 +209,17 @@ async function loadStatus() {
       vid.value = data.vid
       cookieForm.name = data.name || ''
     }
+    // 回显已保存的凭据到输入框，便于查看/编辑（后端已按用户要求返回完整值）
     if (data.has_cookie) {
-      cookieForm.cookie = '' // 不直接展示完整 Cookie，但显示有值
+      cookieForm.cookie = data.cookie || ''
     }
     if (data.has_ticket) {
-      cookieForm.ticket = ''
+      cookieForm.ticket = data.ticket || ''
     }
+    // 回显自动刷新配置
+    cookieForm.cookie_refresh_url = data.cookie_refresh_url || ''
+    cookieForm.browser_path = data.browser_path || ''
+    cookieForm.browser_type = data.browser_type || 'chrome'
   } catch (e) {
     // 忽略
   }
@@ -227,6 +248,22 @@ async function saveCookie() {
     Message.error(e?.message || '保存失败')
   } finally {
     saving.value = false
+  }
+}
+
+async function saveConfig() {
+  savingConfig.value = true
+  try {
+    await saveWereadConfig({
+      cookie_refresh_url: cookieForm.cookie_refresh_url,
+      browser_path: cookieForm.browser_path,
+      browser_type: cookieForm.browser_type,
+    })
+    Message.success('自动刷新配置已保存')
+  } catch (e: any) {
+    Message.error(e?.message || '保存配置失败')
+  } finally {
+    savingConfig.value = false
   }
 }
 

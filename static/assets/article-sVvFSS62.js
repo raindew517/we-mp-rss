@@ -1,0 +1,1 @@
+import{v as e}from"./http-C1NIFWPx.js";export{e as getArticles};
