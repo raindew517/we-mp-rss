@@ -8,7 +8,12 @@
         正在测试连接...
       </a-alert>
       <a-alert v-else-if="connectionStatus === 'success'" type="success">
-        连接成功！书架共 {{ bookCount }} 本书，用户 VID: {{ vid }}<span v-if="hasTicket">；公众号采集凭据已验证</span>
+        <template v-if="isWereadMp">
+          公众号采集连接成功，共检测到 {{ articleCount }} 篇文章
+        </template>
+        <template v-else>
+          连接成功！书架共 {{ bookCount }} 本书，用户 VID: {{ vid }}
+        </template>
       </a-alert>
       <a-alert v-else-if="connectionStatus === 'error'" type="error">
         连接失败：{{ errorMsg }}
@@ -27,10 +32,10 @@
             :disabled="cookieManagedByConfig"
           />
         </a-form-item>
-        <a-form-item label="x-wr-ticket（公众号采集）" field="ticket" extra="仅 weread_mp 模式需要：从 /web/mp/articles 请求的 Request Headers 复制">
+        <a-form-item label="x-wr-ticket（兼容旧版）" field="ticket" extra="当前版本通常可留空；仅旧版接口要求时填写">
           <a-input-password
             v-model="cookieForm.ticket"
-            placeholder="粘贴 x-wr-ticket；只采集书籍笔记时可留空"
+            placeholder="通常可留空；仅旧版接口要求时填写"
             allow-clear
             :disabled="ticketManagedByConfig"
           />
@@ -66,8 +71,8 @@
       </a-form>
 
       <!-- 书架区域 -->
-      <a-divider orientation="left">我的书架</a-divider>
-      <a-spin :loading="loadingBookshelf" tip="加载书架...">
+      <a-divider v-if="!isWereadMp" orientation="left">我的书架</a-divider>
+      <a-spin v-if="!isWereadMp" :loading="loadingBookshelf" tip="加载书架...">
         <div v-if="bookshelf.length === 0 && !loadingBookshelf" class="empty-bookshelf">
           <a-empty description="书架上暂无书籍，请先连接微信读书" />
         </div>
@@ -107,7 +112,7 @@
       </a-spin>
 
       <!-- 采集全部按钮 -->
-      <div style="margin-top: 16px" v-if="bookshelf.length > 0">
+      <div v-if="!isWereadMp && bookshelf.length > 0" style="margin-top: 16px">
         <a-button
           type="primary"
           @click="collectAllNotes"
@@ -148,13 +153,14 @@ import {
 // 状态
 const connectionStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
 const bookCount = ref(0)
+const articleCount = ref(0)
 const vid = ref('')
 const errorMsg = ref('')
 const saving = ref(false)
 const savingConfig = ref(false)
 const testing = ref(false)
 const hasConfig = ref(false)
-const hasTicket = ref(false)
+const isWereadMp = ref(false)
 const managedByConfig = ref(false)
 const cookieManagedByConfig = ref(false)
 const ticketManagedByConfig = ref(false)
@@ -201,7 +207,7 @@ async function loadStatus() {
   try {
     const data = await getWereadStatus() as any
     hasConfig.value = data.configured
-    hasTicket.value = data.has_ticket
+    isWereadMp.value = data.gather_model === 'weread_mp'
     managedByConfig.value = data.managed_by_config
     cookieManagedByConfig.value = data.cookie_managed_by_config
     ticketManagedByConfig.value = data.ticket_managed_by_config
@@ -240,9 +246,6 @@ async function saveCookie() {
     )
     Message.success('微信读书凭据保存成功')
     hasConfig.value = true
-    if (cookieForm.ticket || ticketManagedByConfig.value) {
-      hasTicket.value = true
-    }
     await testConnection()
   } catch (e: any) {
     Message.error(e?.message || '保存失败')
@@ -271,14 +274,16 @@ async function testConnection() {
   testing.value = true
   connectionStatus.value = 'loading'
   try {
-    const result = await testWereadConnection() as any
-    if (hasTicket.value) {
-      await testWereadMpConnection()
+    if (isWereadMp.value) {
+      const result = await testWereadMpConnection() as any
+      articleCount.value = result.article_count
+    } else {
+      const result = await testWereadConnection() as any
+      bookCount.value = result.book_count
+      vid.value = result.vid
+      await loadBookshelf()
     }
     connectionStatus.value = 'success'
-    bookCount.value = result.book_count
-    vid.value = result.vid
-    await loadBookshelf()
   } catch (e: any) {
     connectionStatus.value = 'error'
     errorMsg.value = typeof e === 'string' ? e : e?.message || '连接失败'
@@ -304,7 +309,6 @@ async function clearCookieHandler() {
     await clearWereadCookie()
     Message.success('Cookie 已清除')
     hasConfig.value = false
-    hasTicket.value = false
     connectionStatus.value = 'idle'
     bookshelf.value = []
     bookCount.value = 0

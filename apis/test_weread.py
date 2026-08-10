@@ -29,19 +29,28 @@ class WereadConfigAPITest(unittest.TestCase):
         self.assertEqual(saved["vid"], "123")
         self.assertEqual(saved["ticket"], "ticket-value")
 
+    @patch("apis.weread.app_cfg.get")
     @patch("apis.weread._load_weread_data")
-    def test_status_reports_ticket_separately_from_notes_configuration(self, load):
+    def test_status_reports_mp_mode_without_requiring_ticket(self, load, config_get):
         load.return_value = {
             "cookie": "wr_vid=123; wr_skey=skey",
             "vid": "123",
             "ticket": "",
         }
+        values = {
+            "weread.cookie": "",
+            "weread.ticket": "",
+            "weread.vid": "",
+            "gather.model": "weread_mp",
+        }
+        config_get.side_effect = lambda key, default="": values.get(key, default)
 
         response = asyncio.run(get_weread_status(current_user={"id": "test"}))
 
         self.assertTrue(response["data"]["configured"])
-        self.assertFalse(response["data"]["mp_configured"])
+        self.assertTrue(response["data"]["mp_configured"])
         self.assertFalse(response["data"]["has_ticket"])
+        self.assertEqual(response["data"]["gather_model"], "weread_mp")
 
     @patch("apis.weread.app_cfg.get")
     @patch("apis.weread._load_weread_data", return_value={})
@@ -100,7 +109,7 @@ class WereadConfigAPITest(unittest.TestCase):
         save.assert_not_called()
 
     @patch("core.wx.model.weread_mp.MpsWereadMP")
-    def test_mp_connection_rejects_invalid_ticket(self, collector_class):
+    def test_mp_connection_reports_api_auth_error(self, collector_class):
         from core.wx.model.weread_mp import WereadMPAPIError
 
         collector = collector_class.return_value
