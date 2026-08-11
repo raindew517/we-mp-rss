@@ -84,6 +84,7 @@ async def get_weread_status(current_user=Depends(get_current_user_or_ak)):
     ticket = config_ticket or data.get("ticket", "")
     vid = config_vid or data.get("vid", "")
     name = data.get("name", "")
+    gather_model = app_cfg.get("gather.model", "web") or "web"
 
     # 判断是否已配置
     has_cookie = bool(cookie and vid)
@@ -96,7 +97,8 @@ async def get_weread_status(current_user=Depends(get_current_user_or_ak)):
         "ticket": ticket,          # 完整 x-wr-ticket（如有）
         "has_cookie": bool(cookie),
         "has_ticket": bool(ticket),
-        "mp_configured": bool(cookie and ticket),
+        "mp_configured": bool(cookie),
+        "gather_model": gather_model,
         "managed_by_config": bool(config_cookie or config_ticket or config_vid),
         "cookie_managed_by_config": bool(config_cookie),
         "ticket_managed_by_config": bool(config_ticket),
@@ -199,7 +201,7 @@ async def test_weread_mp_connection(
     req: WereadMPTestRequest,
     current_user=Depends(get_current_user_or_ak),
 ):
-    """Use an existing MP feed to validate Cookie and x-wr-ticket together."""
+    """Use an existing MP feed to validate the configured WeRead credentials."""
     from core.db import DB
     from core.models.feed import Feed
     from core.wx.model.weread_mp import MpsWereadMP, WereadMPAPIError, parse_mp_articles
