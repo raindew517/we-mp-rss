@@ -148,8 +148,18 @@ const startPolling = () => {
 
       // 更新状态消息
       const msg = res?.msg || ''
-      if (msg.includes('过期') || msg.includes('超时')) {
+      // 登录成功但 Cookie 验证失败：明确提示重新扫码
+      if (res?.data?.logicCode === 'COOKIE_INVALID') {
+        stopPolling()
+        errorMessage.value = msg || '登录成功但 Cookie 无效，请重新扫码'
+        loginSuccess.value = false
+        return
+      }
+      // 注意：微信读书在等待扫码阶段返回的 LOGIN_TIMEOUT 属于正常长轮询，
+      // 仅当后端明确判定二维码整体超时才停止
+      if (msg.includes('已过期')) {
         qrExpired.value = true
+        statusMsg.value = msg || '二维码已过期'
         stopPolling()
         return
       }
@@ -160,9 +170,6 @@ const startPolling = () => {
         statusMsg.value = '已扫码，请在手机上确认登录...'
       } else if (logicCode === 'NEED_OTP') {
         statusMsg.value = '需要短信验证码，当前暂不支持'
-        stopPolling()
-      } else if (logicCode === 'LOGIN_TIMEOUT') {
-        qrExpired.value = true
         stopPolling()
       } else {
         statusMsg.value = '等待扫码...'

@@ -8,10 +8,18 @@
         正在测试连接...
       </a-alert>
       <a-alert v-else-if="connectionStatus === 'success'" type="success">
-        连接成功！书架共 {{ bookCount }} 本书，用户 VID: {{ vid }}
+        <template v-if="isWereadMp">
+          公众号采集连接成功，共检测到 {{ articleCount }} 篇文章
+        </template>
+        <template v-else>
+          连接成功！书架共 {{ bookCount }} 本书，用户 VID: {{ vid }}
+        </template>
       </a-alert>
       <a-alert v-else-if="connectionStatus === 'error'" type="error">
         连接失败：{{ errorMsg }}
+      </a-alert>
+      <a-alert v-if="managedByConfig" type="warning" style="margin-top: 12px">
+        部分凭据由 config.yaml 或环境变量管理，页面不会覆盖这些值。
       </a-alert>
 
       <a-form :model="cookieForm" layout="vertical" style="margin-top: 16px">
@@ -21,10 +29,26 @@
             placeholder="粘贴完整的 Cookie 字符串，需包含 wr_vid、wr_skey 等关键字段"
             :auto-size="{ minRows: 3, maxRows: 6 }"
             allow-clear
+            :disabled="cookieManagedByConfig"
+          />
+        </a-form-item>
+        <a-form-item label="x-wr-ticket（兼容旧版）" field="ticket" extra="当前版本通常可留空；仅旧版接口要求时填写">
+          <a-input-password
+            v-model="cookieForm.ticket"
+            placeholder="通常可留空；仅旧版接口要求时填写"
+            allow-clear
+            :disabled="ticketManagedByConfig"
           />
         </a-form-item>
         <a-form-item label="用户名称（可选）" field="name">
           <a-input v-model="cookieForm.name" placeholder="如：张三" />
+        </a-form-item>
+        <a-divider style="margin: 8px 0">自动刷新 Cookie（可选，定时任务前自动更新）</a-divider>
+        <a-form-item label="公众号主页 URL" field="cookie_refresh_url" extra="用于自动刷新 Cookie。请填公众号主页（reader 页，形如 https://weread.qq.com/web/mp/reader/xxxx），不要填带 bookId 的 /web/mp/articles 接口地址">
+          <a-input v-model="cookieForm.cookie_refresh_url" placeholder="https://weread.qq.com/web/mp/reader/MP_WXS_xxx" />
+        </a-form-item>
+        <a-form-item label="浏览器路径（本机 Chrome）" field="browser_path" extra="本机 Chrome 可执行文件路径，用于打开上方 URL 提取 Cookie；留空则用 Playwright 自带 Chromium">
+          <a-input v-model="cookieForm.browser_path" placeholder="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" />
         </a-form-item>
         <a-space>
           <a-button type="primary" @click="saveCookie" :loading="saving">
@@ -39,16 +63,20 @@
             <template #icon><icon-check-circle /></template>
             测试连接
           </a-button>
-          <a-button status="danger" @click="clearCookie" :disabled="!hasConfig">
+          <a-button status="danger" @click="clearCookieHandler" :disabled="!hasConfig || managedByConfig">
             <template #icon><icon-delete /></template>
             清除 Cookie
+          </a-button>
+          <a-button @click="saveConfig" :loading="savingConfig">
+            <template #icon><icon-settings /></template>
+            保存刷新配置
           </a-button>
         </a-space>
       </a-form>
 
       <!-- 书架区域 -->
-      <a-divider orientation="left">我的书架</a-divider>
-      <a-spin :loading="loadingBookshelf" tip="加载书架...">
+      <a-divider v-if="!isWereadMp" orientation="left">我的书架</a-divider>
+      <a-spin v-if="!isWereadMp" :loading="loadingBookshelf" tip="加载书架...">
         <div v-if="bookshelf.length === 0 && !loadingBookshelf" class="empty-bookshelf">
           <a-empty description="书架上暂无书籍，请先连接微信读书" />
         </div>
@@ -88,7 +116,7 @@
       </a-spin>
 
       <!-- 采集全部按钮 -->
-      <div style="margin-top: 16px" v-if="bookshelf.length > 0">
+      <div v-if="!isWereadMp && bookshelf.length > 0" style="margin-top: 16px">
         <a-button
           type="primary"
           @click="collectAllNotes"
@@ -120,12 +148,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, inject } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   getWereadStatus,
   saveWereadCookie,
+  saveWereadConfig,
   testWereadConnection,
+  testWereadMpConnection,
   getWereadBookshelf,
   collectWereadNotes,
   clearWereadCookie,
@@ -135,11 +165,17 @@ import WereadAuthQrcode from '@/components/WereadAuthQrcode.vue'
 // 状态
 const connectionStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
 const bookCount = ref(0)
+const articleCount = ref(0)
 const vid = ref('')
 const errorMsg = ref('')
 const saving = ref(false)
+const savingConfig = ref(false)
 const testing = ref(false)
 const hasConfig = ref(false)
+const isWereadMp = ref(false)
+const managedByConfig = ref(false)
+const cookieManagedByConfig = ref(false)
+const ticketManagedByConfig = ref(false)
 const loadingBookshelf = ref(false)
 const collectingBookId = ref('')
 const collectingAll = ref(false)
@@ -148,7 +184,11 @@ const collectModalVisible = ref(false)
 // 表单
 const cookieForm = reactive({
   cookie: '',
+  ticket: '',
   name: '',
+  cookie_refresh_url: '',
+  browser_path: '',
+  browser_type: 'chrome',
 })
 
 // 书架
@@ -166,6 +206,9 @@ const bookshelf = ref<Book[]>([])
 // 扫码授权
 const wereadQrRef = ref()
 
+// 扫码成功后同步刷新 App 顶栏的微信读书授权状态（由 App.vue provide）
+const refreshWereadStatus = inject('refreshWereadStatus') as (() => Promise<void>) | undefined
+
 function showQrAuth() {
   wereadQrRef.value?.startAuth()
 }
@@ -174,6 +217,10 @@ async function handleWereadQrSuccess(result: any) {
   // 扫码成功后刷新状态
   await loadStatus()
   await testConnection()
+  // 同步顶栏图标状态，避免 header 仍显示"未授权"
+  if (refreshWereadStatus) {
+    await refreshWereadStatus()
+  }
   Message.success(`微信读书授权成功，用户 VID: ${result?.vid || ''}`)
 }
 
@@ -197,27 +244,44 @@ async function loadStatus() {
   try {
     const data = await getWereadStatus() as any
     hasConfig.value = data.configured
+    isWereadMp.value = data.gather_model === 'weread_mp'
+    managedByConfig.value = data.managed_by_config
+    cookieManagedByConfig.value = data.cookie_managed_by_config
+    ticketManagedByConfig.value = data.ticket_managed_by_config
     if (data.vid) {
       vid.value = data.vid
       cookieForm.name = data.name || ''
     }
+    // 回显已保存的凭据到输入框，便于查看/编辑（后端已按用户要求返回完整值）
     if (data.has_cookie) {
-      cookieForm.cookie = '' // 不直接展示完整 Cookie，但显示有值
+      cookieForm.cookie = data.cookie || ''
     }
+    if (data.has_ticket) {
+      cookieForm.ticket = data.ticket || ''
+    }
+    // 回显自动刷新配置
+    cookieForm.cookie_refresh_url = data.cookie_refresh_url || ''
+    cookieForm.browser_path = data.browser_path || ''
+    cookieForm.browser_type = data.browser_type || 'chrome'
   } catch (e) {
     // 忽略
   }
 }
 
 async function saveCookie() {
-  if (!cookieForm.cookie.trim()) {
-    Message.warning('请填写 Cookie')
+  if (!cookieForm.cookie.trim() && !hasConfig.value) {
+    Message.warning('首次配置请填写 Cookie')
     return
   }
   saving.value = true
   try {
-    await saveWereadCookie(cookieForm.cookie, '', cookieForm.name)
-    Message.success('Cookie 保存成功')
+    await saveWereadCookie(
+      cookieForm.cookie || undefined,
+      '',
+      cookieForm.name,
+      cookieForm.ticket || undefined,
+    )
+    Message.success('微信读书凭据保存成功')
     hasConfig.value = true
     await testConnection()
   } catch (e: any) {
@@ -227,15 +291,36 @@ async function saveCookie() {
   }
 }
 
+async function saveConfig() {
+  savingConfig.value = true
+  try {
+    await saveWereadConfig({
+      cookie_refresh_url: cookieForm.cookie_refresh_url,
+      browser_path: cookieForm.browser_path,
+      browser_type: cookieForm.browser_type,
+    })
+    Message.success('自动刷新配置已保存')
+  } catch (e: any) {
+    Message.error(e?.message || '保存配置失败')
+  } finally {
+    savingConfig.value = false
+  }
+}
+
 async function testConnection() {
   testing.value = true
   connectionStatus.value = 'loading'
   try {
-    const result = await testWereadConnection() as any
+    if (isWereadMp.value) {
+      const result = await testWereadMpConnection() as any
+      articleCount.value = result.article_count
+    } else {
+      const result = await testWereadConnection() as any
+      bookCount.value = result.book_count
+      vid.value = result.vid
+      await loadBookshelf()
+    }
     connectionStatus.value = 'success'
-    bookCount.value = result.book_count
-    vid.value = result.vid
-    await loadBookshelf()
   } catch (e: any) {
     connectionStatus.value = 'error'
     errorMsg.value = typeof e === 'string' ? e : e?.message || '连接失败'

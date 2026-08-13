@@ -136,6 +136,10 @@
                 <template #icon><icon-scan /></template>
                 刷新授权
               </a-button>
+              <a-button type="outline" status="success" @click="handleWereadAuthClick">
+                <template #icon><icon-book /></template>
+                微信读书授权
+              </a-button>
               <a-dropdown>
                 <a-button>
                   <template #icon>
@@ -885,6 +889,15 @@ const wechatAuthQrcodeRef = ref()
 const showAuthQrcode = inject('showAuthQrcode') as () => void
 const handleAuthClick = () => {
   showAuthQrcode()
+}
+
+const showWereadAuthQrcode = inject('showWereadAuthQrcode') as (() => void) | undefined
+const handleWereadAuthClick = () => {
+  if (showWereadAuthQrcode) {
+    showWereadAuthQrcode()
+  } else {
+    Message.warning('微信读书授权入口暂不可用')
+  }
 }
 
 const exportOPML = async () => {

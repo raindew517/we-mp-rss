@@ -7,12 +7,16 @@
 - 阅读进度和统计信息
 
 API 端点（需要已登录的 Cookie）:
-- 书架:  https://i.weread.qq.com/shelf/sync?userVid={vid}&synckey=0
-- 书籍详情: https://i.weread.qq.com/book/info?bookId={bookId}
-- 笔记/划线: https://i.weread.qq.com/book/bookmarklist?bookId={bookId}
-- 章节列表: https://i.weread.qq.com/book/chapterInfos?bookIds={bookId}&synckeys=0
-- 评论: https://i.weread.qq.com/web/review/list?bookId={bookId}&listType=11
-- 阅读统计: https://i.weread.qq.com/web/book/readstat?bookId={bookId}
+全部走 weread 主站 web 域（https://weread.qq.com/web/...），与
+scripts/weread_scan_diag.py 实测成功的路径一致：
+- 书架:  https://weread.qq.com/web/shelf/sync?userVid=&synckey=0
+        （注意：userVid 必须传空字符串，非空反而会触发 -2012/401！
+        参考 steptian/weread-mp 与诊断脚本实测）
+- 书籍详情: https://weread.qq.com/web/book/info?bookId={bookId}
+- 笔记/划线: https://weread.qq.com/web/book/bookmarklist?bookId={bookId}
+- 章节列表: https://weread.qq.com/web/book/chapterInfos?bookIds={bookId}&synckeys=0
+- 评论: https://weread.qq.com/web/review/list?bookId={bookId}&listType=11
+- 阅读统计: https://weread.qq.com/web/book/readstat?bookId={bookId}
 
 认证方式:
 - 需要从浏览器获取 weread.qq.com 的 Cookie
@@ -30,7 +34,10 @@ from core.log import logger
 
 
 # ---- 微信读书 API 配置 ----
-WEREAD_BASE = "https://i.weread.qq.com"
+# 注意：必须用 weread 主站 web 域！i 域（i.weread.qq.com）对短值 wr_skey /
+# 未续期 Cookie 直接返回 HTTP 401；web 域返回 200 + 业务码 -2012，且
+# userVid 必须传空字符串（诊断脚本实测：非空反而触发 -2012）。
+WEREAD_BASE = "https://weread.qq.com"
 
 
 class MpsWeread(WxGather):
@@ -48,12 +55,13 @@ class MpsWeread(WxGather):
     def __init__(self, is_add: bool = False):
         super().__init__(is_add=is_add)
         self._weread_cookies: str = ""
+        self._weread_ticket: str = ""
         self._weread_vid: str = ""
         self._weread_name: str = ""
 
     def _load_weread_auth(self):
         """加载微信读书的 Cookie"""
-        from core.config import Config
+        from core.config import Config, cfg as app_cfg
         import os
 
         lic_path = "./data/wx.lic"
@@ -70,18 +78,21 @@ class MpsWeread(WxGather):
             except Exception:
                 weread_data = {}
 
-        self._weread_cookies = weread_data.get("cookie", "")
-        self._weread_vid = weread_data.get("vid", "")
+        self._weread_cookies = app_cfg.get("weread.cookie", "") or weread_data.get("cookie", "")
+        self._weread_ticket = app_cfg.get("weread.ticket", "") or weread_data.get("ticket", "")
+        self._weread_vid = app_cfg.get("weread.vid", "") or weread_data.get("vid", "")
         self._weread_name = weread_data.get("name", "")
 
     def _weread_get(self, url: str, params: dict = None) -> Optional[dict]:
-        """带微信读书 Cookie 的 GET 请求"""
+        """带微信读书 Cookie 的 GET 请求（web 域，浏览器完整请求头）"""
         import requests
 
         headers = {
             "Cookie": self._weread_cookies,
             "User-Agent": self.user_agent,
             "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Origin": "https://weread.qq.com",
             "Referer": "https://weread.qq.com/",
         }
 
@@ -91,9 +102,23 @@ class MpsWeread(WxGather):
                 url, params=params, headers=headers, proxies=proxies, timeout=15
             )
             if resp.status_code == 200:
-                return resp.json()
+                payload = resp.json()
+                # 微信读书以 HTTP 200 返回业务错误（登录态失效等），
+                # 必须检查 errcode，否则「登录超时」会被当成空书架（0 本书）
+                errcode = payload.get("errCode", payload.get("errcode", 0))
+                if errcode in (-2012, -2010, -2041):
+                    print_warning(
+                        "Weread API 登录态失效: "
+                        f"{payload.get('errmsg') or payload.get('errlog') or errcode}"
+                        "（Cookie 已过期或无效，请在「微信读书管理」页重新扫码授权）"
+                    )
+                    return None
+                return payload
             elif resp.status_code == 401 or resp.status_code == 403:
-                print_warning(f"Weread API 认证失败: {resp.status_code}")
+                print_warning(
+                    f"Weread API 认证失败: {resp.status_code}（Cookie 已过期或无效，"
+                    "请在「微信读书管理」页重新扫码授权）"
+                )
                 return None
             else:
                 print_warning(f"Weread API 返回 {resp.status_code}: {url}")
@@ -111,14 +136,19 @@ class MpsWeread(WxGather):
             print_error("微信读书 vid 未设置，请先在管理页保存 Cookie")
             return []
 
-        url = f"{WEREAD_BASE}/shelf/sync"
+        url = f"{WEREAD_BASE}/web/shelf/sync"
         params = {
-            "userVid": self._weread_vid,
+            # 关键：userVid 必须传空字符串！非空反而会触发 -2012「登录超时」，
+            # 参考 scripts/weread_scan_diag.py 与 steptian/weread-mp 实测。
+            "userVid": "",
             "synckey": 0,
             "lectureSynckey": 0,
         }
 
         data = self._weread_get(url, params)
+        if data is None:
+            # 请求失败/登录态失效，返回 None 供调用方区分「失败」与「空书架」
+            return None
         if not data:
             return []
 
@@ -147,7 +177,7 @@ class MpsWeread(WxGather):
 
     def _get_book_bookmarks(self, book_id: str) -> List[Dict]:
         """获取一本书的划线/笔记"""
-        url = f"{WEREAD_BASE}/book/bookmarklist"
+        url = f"{WEREAD_BASE}/web/book/bookmarklist"
         params = {"bookId": book_id}
 
         data = self._weread_get(url, params)
@@ -176,7 +206,7 @@ class MpsWeread(WxGather):
 
     def _get_book_info(self, book_id: str) -> Optional[Dict]:
         """获取书籍详情"""
-        url = f"{WEREAD_BASE}/book/info"
+        url = f"{WEREAD_BASE}/web/book/info"
         params = {"bookId": book_id}
 
         data = self._weread_get(url, params)
@@ -205,7 +235,9 @@ class MpsWeread(WxGather):
 
     def _get_chapter_info(self, book_id: str) -> List[Dict]:
         """获取书籍章节列表"""
-        url = f"{WEREAD_BASE}/book/chapterInfos"
+        # 注：web 域无 /web/book/chapterInfos 接口（实测 404），
+        # 该接口在主流程中未被调用，失败时静默返回空列表。
+        url = f"{WEREAD_BASE}/web/book/chapterInfos"
         params = {"bookIds": book_id, "synckeys": 0}
 
         data = self._weread_get(url, params)
@@ -289,6 +321,14 @@ class MpsWeread(WxGather):
         all_bookmarks = []
 
         if faker_id and faker_id.strip():
+            if str(faker_id).startswith("MP_WXS_"):
+                # 公众号书在微信读书内只有订阅流，没有划线/笔记数据
+                print_warning(
+                    f"《{Mps_title}》是公众号订阅（{faker_id}），微信读书不支持其划线采集，"
+                    "请切换 gather.model=weread_mp 模式采集公众号文章"
+                )
+                super().Over(CallBack=Over_CallBack)
+                return
             # 指定了 bookId，直接采集该书的笔记
             print_info(f"采集书籍 {Mps_title} 的笔记/划线...")
             bookmarks = self._get_book_bookmarks(faker_id)
@@ -311,6 +351,15 @@ class MpsWeread(WxGather):
             for idx, book in enumerate(books):
                 book_id = book["book_id"]
                 book_title = book["title"]
+
+                if str(book_id).startswith("MP_WXS_"):
+                    # 公众号订阅没有划线/笔记数据，跳过以免误报"0 条"
+                    print_warning(
+                        f"[{idx+1}/{len(books)}] 跳过公众号《{book_title}》"
+                        f"（{book_id}）：微信读书不支持公众号划线采集，"
+                        "请用 weread_mp 模式采集文章"
+                    )
+                    continue
 
                 print_info(f"[{idx+1}/{len(books)}] 采集《{book_title}》的笔记...")
                 time.sleep(random.randint(1, interval))

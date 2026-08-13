@@ -133,8 +133,6 @@ class MpsWeb(WxGather):
                 super().Item_Over(item={"mps_id":Mps_id,"mps_title":Mps_title},CallBack=Item_Over_CallBack)
         super().Over(CallBack=Over_CallBack)
         pass
-<<<<<<< HEAD
-
     def _fallback_to_free_publish(self, faker_id, Mps_id, Mps_title, CallBack,
                                    start_page, MaxPage, interval,
                                    Gather_Content, Item_Over_CallBack, Over_CallBack):
@@ -161,7 +159,7 @@ class MpsWeb(WxGather):
         except Exception as e:
             print_error(f"降级到 free_publish 失败: {e}")
             super().Error(f"所有采集方式均失败: {e}")
-=======
+
     # 新增辅助方法用于设置feed状态
     def _set_feed_status(self, feed_id: str, status: int):
         """设置feed状态"""
@@ -178,4 +176,3 @@ class MpsWeb(WxGather):
                 print(f"未找到feed {feed_id}")
         except Exception as e:
             logger.error(f"设置feed状态失败: {e}")
->>>>>>> cadb903555b05b5cc3fe855aa45815f9efd8f28c
