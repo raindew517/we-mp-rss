@@ -91,6 +91,57 @@ class WereadMpRequestTest(unittest.TestCase):
         collector.http_proxy_url = ""
         return collector
 
+    def make_collector_with_vid(self):
+        collector = self.make_collector()
+        collector._weread_vid = "123"
+        return collector
+
+    @patch("core.wx.model.weread.MpsWeread._get_shelf_books")
+    def test_ensure_mp_on_shelf_skips_when_already_present(self, shelf):
+        shelf.return_value = [{"book_id": "MP_WXS_1", "title": "t"}]
+        collector = self.make_collector_with_vid()
+
+        ok, detail = collector.ensure_mp_on_shelf("MP_WXS_1", "Name")
+
+        self.assertTrue(ok)
+        self.assertEqual(detail, "已在书架")
+
+    @patch("core.wx.model.weread.MpsWeread._weread_post")
+    @patch("core.wx.model.weread.MpsWeread._get_shelf_books")
+    def test_ensure_mp_on_shelf_adds_missing_mp(self, shelf, post):
+        shelf.return_value = [{"book_id": "MP_WXS_2", "title": "other"}]
+        post.return_value = {"errCode": 0, "errMsg": ""}
+        collector = self.make_collector_with_vid()
+
+        ok, detail = collector.ensure_mp_on_shelf("MP_WXS_1", "Name")
+
+        self.assertTrue(ok)
+        self.assertIn("已自动添加", detail)
+        post.assert_called_once()
+        url, kwargs = post.call_args
+        self.assertIn("/web/shelf/add", url[0])
+        self.assertEqual(kwargs["json_data"], {"bookIds": ["MP_WXS_1"]})
+
+    @patch("core.wx.model.weread.MpsWeread._weread_post")
+    @patch("core.wx.model.weread.MpsWeread._get_shelf_books")
+    def test_ensure_mp_on_shelf_reports_login_expired(self, shelf, post):
+        shelf.return_value = [{"book_id": "MP_WXS_2", "title": "other"}]
+        post.return_value = {"errCode": -2012, "errMsg": "login expired"}
+        collector = self.make_collector_with_vid()
+
+        ok, detail = collector.ensure_mp_on_shelf("MP_WXS_1", "Name")
+
+        self.assertFalse(ok)
+        self.assertIn("登录态失效", detail)
+
+    def test_ensure_mp_on_shelf_skips_non_mp(self):
+        collector = self.make_collector_with_vid()
+
+        ok, detail = collector.ensure_mp_on_shelf("3300008485", "Book")
+
+        self.assertTrue(ok)
+        self.assertIn("跳过", detail)
+
     @patch("requests.get")
     def test_article_list_request_uses_official_endpoint_and_ticket(self, get):
         response = Mock(status_code=200)

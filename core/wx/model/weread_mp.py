@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 from core.log import logger
 from core.models.feed import Feed
-from core.print import print_info
+from core.print import print_info, print_warning
 from core.wx.model.weread import MpsWeread
 
 
@@ -305,6 +305,17 @@ class MpsWereadMP(MpsWeread):
                 "the feed id must use the MP_WXS_ prefix",
                 retriable=False,
             )
+
+        # 未在微信读书书架上的公众号自动添加到书架（关注），保证采集可用。
+        # 失败仅告警不中断：采集接口会给出最终结果。
+        try:
+            ok, detail = self.ensure_mp_on_shelf(book_id, Mps_title)
+            if ok:
+                print_info(f"[{Mps_title}] 书架检查: {detail}")
+            else:
+                print_warning(f"[{Mps_title}] 书架检查失败: {detail}")
+        except Exception as exc:
+            print_warning(f"[{Mps_title}] 书架检查异常: {exc}")
 
         gather_content = bool(Gather_Content or self.Gather_Content)
         content_interval = self._get_content_interval()

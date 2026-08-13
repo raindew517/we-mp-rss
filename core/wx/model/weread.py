@@ -175,6 +175,96 @@ class MpsWeread(WxGather):
             })
         return books
 
+    def _weread_post(self, url: str, json_data: dict = None, params: dict = None) -> Optional[dict]:
+        """带微信读书 Cookie 的 POST 请求（web 域）。
+
+        返回解析后的 JSON dict；HTTP/超时/非 JSON 时返回 None。
+        业务错误（errCode != 0）不在此处拦截，交由调用方处理。
+        """
+        import requests
+
+        headers = {
+            "Cookie": self._weread_cookies,
+            "User-Agent": self.user_agent,
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Origin": "https://weread.qq.com",
+            "Referer": "https://weread.qq.com/",
+            "Content-Type": "application/json",
+        }
+        try:
+            proxies = self._get_proxies()
+            resp = requests.post(
+                url, params=params, json=json_data, headers=headers,
+                proxies=proxies, timeout=15,
+            )
+        except requests.exceptions.Timeout:
+            print_warning(f"Weread API 超时: {url}")
+            return None
+        except Exception as e:
+            print_warning(f"Weread API 异常: {e}")
+            return None
+        if resp.status_code != 200:
+            print_warning(f"Weread API 返回 {resp.status_code}: {url}")
+            return None
+        try:
+            return resp.json()
+        except ValueError:
+            print_warning(f"Weread API 响应非 JSON: {url}")
+            return None
+
+    def add_to_shelf(self, book_id: str) -> dict:
+        """把 bookId 加入微信读书书架。
+
+        公众号在书架上即视为「已关注」。接口: POST /web/shelf/add，
+        请求体: {"bookIds": [book_id]}（参考 ylw1997/wereadapi 实测文档）。
+        返回微信读书原始 JSON；请求失败时返回 {"errCode": -1, ...}。
+        """
+        if not book_id:
+            return {"errCode": -1, "errMsg": "empty book_id"}
+        payload = self._weread_post(
+            f"{WEREAD_BASE}/web/shelf/add",
+            json_data={"bookIds": [book_id]},
+        )
+        if payload is None:
+            return {"errCode": -1, "errMsg": "request failed"}
+        return payload
+
+    def ensure_mp_on_shelf(self, book_id: str, mp_name: str = "") -> tuple:
+        """确保公众号在微信读书书架上，不在则自动添加（关注）。
+
+        流程: 拉取书架 -> 若 bookId 已在书架则跳过 -> POST /web/shelf/add。
+        返回: (ok: bool, detail: str)，ok=True 表示可正常采集（已在书架或已添加）。
+        """
+        from core.config import cfg
+
+        name = mp_name or book_id
+        if not str(book_id or "").startswith("MP_WXS_"):
+            return True, "非微信读书公众号，跳过书架检查"
+        if not cfg.get("weread.auto_add_to_shelf", True):
+            return True, "未启用自动添加书架（weread.auto_add_to_shelf=false）"
+        if not self._weread_vid:
+            self._weread_vid = self._extract_vid_from_cookie(self._weread_cookies)
+
+        shelf = self._get_shelf_books()
+        if shelf is None:
+            # 与「空书架」区分：请求失败/登录态失效
+            return False, "书架获取失败（Cookie 可能已过期），无法确认书架状态"
+        if any(b["book_id"] == book_id for b in shelf):
+            return True, "已在书架"
+        if not self._weread_vid:
+            return False, "Cookie 中未找到 wr_vid，无法自动添加到书架"
+
+        payload = self.add_to_shelf(book_id)
+        if not isinstance(payload, dict):
+            return False, f"shelf/add 失败: {payload}"
+        code = payload.get("errCode", payload.get("errcode", 0))
+        if code == 0:
+            return True, f"「{name}」已自动添加到书架"
+        if code in (-2012, -2010, -2041):
+            return False, f"登录态失效，无法添加书架: {payload.get('errMsg', code)}"
+        return False, f"shelf/add 失败: {payload.get('errMsg', payload)} (errCode={code})"
+
     def _get_book_bookmarks(self, book_id: str) -> List[Dict]:
         """获取一本书的划线/笔记"""
         url = f"{WEREAD_BASE}/web/book/bookmarklist"
