@@ -1088,13 +1088,20 @@ const handleRefresh = () => {
   UpdateMps(activeMpId.value, {
     start_page: refreshForm.value.startPage,
     end_page: refreshForm.value.endPage
-  }).then(() => {
-    Message.success('刷新成功')
+  }).then((res: any) => {
+    // 接口已同步完成采集，立即刷新列表展示新文章
+    const count = res?.total ?? res?.data?.total
+    Message.success(count !== undefined && count !== null ? `刷新成功，新增 ${count} 篇` : '刷新成功')
     refreshModalVisible.value = false
+    fetchArticles()
+  }).catch((err: any) => {
+    // 业务错误（如微信读书 Cookie 失效）已由 http 拦截器统一弹窗，这里只兜底网络异常
+    if (typeof err !== 'object' || !err?.message) {
+      Message.error(String(err || '刷新失败'))
+    }
   }).finally(() => {
     fullLoading.value = false
   })
-  fetchArticles()
 }
 const clear_articles = () => {
   fullLoading.value = true
